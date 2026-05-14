@@ -1,0 +1,230 @@
+"use client";
+
+import Link from "next/link";
+import { useMemo, useState } from "react";
+import { formatMoney } from "@/lib/tickets";
+import { twMerge } from "tailwind-merge";
+
+type TicketOption = {
+  id: string;
+  name: string;
+  description: string | null;
+  price_cents: number;
+  currency: string;
+  capacity: number;
+  sold: number;
+};
+
+type CheckoutFormProps = {
+  eventId: string;
+  isFree: boolean;
+  tickets: TicketOption[];
+};
+
+type QuantityStepperProps = {
+  disabled: boolean;
+  max: number;
+  ticketId: string;
+  value: number;
+  isSoldOut: boolean;
+  onChange: (ticketId: string, quantity: number) => void;
+};
+
+function QuantityStepper({
+  disabled,
+  max,
+  ticketId,
+  value,
+  isSoldOut,
+  onChange,
+}: QuantityStepperProps) {
+  const canDecrease = !disabled && value > 0;
+  const canIncrease = !disabled && value < max;
+
+  return (
+    <div
+      className={twMerge(
+        "flex h-9 shrink-0 items-center rounded-full border border-[#f3eadb]/12 bg-black/50 p-1 shadow-inner shadow-white/5 lg:h-12",
+        isSoldOut && "hidden",
+      )}
+    >
+      <button
+        type="button"
+        disabled={!canDecrease}
+        aria-label="Decrease ticket quantity"
+        onClick={() => onChange(ticketId, Math.max(value - 1, 0))}
+        className="flex size-7 items-center justify-center rounded-full text-lg font-semibold leading-none text-[#f8f0e3] transition duration-300 hover:bg-[#f3eadb]/10 disabled:cursor-not-allowed disabled:text-[#f3eadb]/24 lg:size-10"
+      >
+        −
+      </button>
+      <span className="w-7 text-center text-sm font-semibold text-[#f8f0e3] lg:w-9 lg:text-base">
+        {value}
+      </span>
+      <button
+        type="button"
+        disabled={!canIncrease}
+        aria-label="Increase ticket quantity"
+        onClick={() => onChange(ticketId, Math.min(value + 1, max))}
+        className="flex size-7 items-center justify-center rounded-full text-lg font-semibold leading-none text-[#f8f0e3] transition duration-300 hover:bg-[#f3eadb]/10 disabled:cursor-not-allowed disabled:text-[#f3eadb]/24 lg:size-10"
+      >
+        +
+      </button>
+    </div>
+  );
+}
+
+export function CheckoutForm({ eventId, isFree, tickets }: CheckoutFormProps) {
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const total = useMemo(
+    () =>
+      tickets.reduce(
+        (sum, ticket) => sum + (quantities[ticket.id] ?? 0) * ticket.price_cents,
+        0,
+      ),
+    [quantities, tickets],
+  );
+  const isSoldOut = tickets.every((ticket) => ticket.capacity - ticket.sold <= 0);
+
+  async function startCheckout() {
+    setIsLoading(true);
+    setError(null);
+
+    const items = tickets
+      .map((ticket) => ({
+        ticketTypeId: ticket.id,
+        quantity: quantities[ticket.id] ?? 0,
+      }))
+      .filter((item) => item.quantity > 0);
+
+    try {
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventId, items }),
+      });
+
+      const payload = (await response.json()) as {
+        url?: string;
+        error?: string;
+      };
+
+      if (!response.ok || !payload.url) {
+        throw new Error(payload.error ?? "Unable to start checkout.");
+      }
+
+      window.location.href = payload.url;
+    } catch (checkoutError) {
+      setError(checkoutError instanceof Error ? checkoutError.message : "Checkout failed.");
+      setIsLoading(false);
+    }
+  }
+
+  if (isFree) {
+    return (
+      <div className="space-y-4">
+        <div className="relative overflow-hidden border border-[#f3eadb]/12 bg-[radial-gradient(circle_at_18%_18%,rgba(172,67,43,0.18),transparent_34%),radial-gradient(circle_at_82%_22%,rgba(215,199,173,0.08),transparent_28%),rgba(0,0,0,0.24)] p-4 lg:p-5">
+          <div className="pointer-events-none absolute -right-10 -top-10 size-28 rounded-full bg-[#d7c7ad]/10 blur-2xl" />
+          <div className="relative">
+            <h3 className="text-lg font-black uppercase leading-none tracking-[-0.045em] text-[#f8f0e3] lg:text-3xl small-laptop:text-2xl">
+              No checkout required
+            </h3>
+            <p className="mt-3 text-sm leading-6 text-[#f3eadb]/62 md:text-base md:leading-8 small-laptop:leading-7">
+              This event is free to attend, so there are no ticket options or payment steps.
+              Check the event details, bring your friends and come through.
+            </p>
+          </div>
+        </div>
+        <p className="px-2 text-center text-[0.7rem] leading-5 text-[#f3eadb]/42 lg:text-xs">
+          Entry may still be subject to venue capacity and door policy.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2.5 lg:space-y-4">
+      {tickets.map((ticket) => {
+        const remaining = Math.max(ticket.capacity - ticket.sold, 0);
+        const selected = quantities[ticket.id] ?? 0;
+        const maxQuantity = Math.min(remaining, 10);
+        const isTicketSoldOut = remaining === 0;
+
+        return (
+          <div key={ticket.id} className="border border-[#f3eadb]/12 bg-black/24 p-3 lg:p-5">
+            <div className="flex items-center justify-between gap-3 lg:gap-4">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-base font-semibold leading-tight text-[#f8f0e3] lg:text-xl">
+                    {ticket.name}
+                  </h3>
+                  {isTicketSoldOut ? (
+                    <span className="rounded-full border border-red-300/20 bg-red-400/10 px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-red-200">
+                      Sold out
+                    </span>
+                  ) : null}
+                </div>
+                <p className="mt-1 text-sm font-medium text-[#d7c7ad]">
+                  {formatMoney(ticket.price_cents, ticket.currency)}
+                </p>
+                {ticket.description ? (
+                  <p className="mt-1 text-xs text-[#f3eadb]/52 lg:text-sm">
+                    {ticket.description}
+                  </p>
+                ) : null}
+              </div>
+
+              <QuantityStepper
+                disabled={isTicketSoldOut || isLoading}
+                max={maxQuantity}
+                ticketId={ticket.id}
+                value={selected}
+                isSoldOut={isTicketSoldOut}
+                onChange={(ticketId, quantity) =>
+                  setQuantities((current) => ({
+                    ...current,
+                    [ticketId]: quantity,
+                  }))
+                }
+              />
+            </div>
+          </div>
+        );
+      })}
+
+      {error ? <p className="text-sm text-red-300">{error}</p> : null}
+
+      <button
+        type="button"
+        disabled={isSoldOut || total === 0 || isLoading}
+        onClick={startCheckout}
+        className="w-full rounded-full bg-[#f8f0e3] px-6 py-2.5 text-sm font-semibold uppercase tracking-[0.18em] text-black transition duration-300 hover:bg-white disabled:cursor-not-allowed disabled:opacity-40 small-laptop:py-3 lg:py-4 lg:text-base"
+      >
+        {isSoldOut
+          ? "Sold Out"
+          : isLoading
+            ? "Opening checkout..."
+            : `Checkout · ${formatMoney(total)}`}
+      </button>
+      <p className="px-2 text-center text-[0.7rem] leading-5 text-[#f3eadb]/42 lg:text-xs">
+        By purchasing a ticket, you agree to the{" "}
+        <Link
+          href="/terms"
+          className="underline underline-offset-4 hover:text-[#f8f0e3] transition duration-300"
+        >
+          Terms & Conditions
+        </Link>{" "}
+        and{" "}
+        <Link
+          href="/privacy"
+          className="underline underline-offset-4 hover:text-[#f8f0e3] transition duration-300"
+        >
+          Privacy Policy
+        </Link>
+        .
+      </p>
+    </div>
+  );
+}

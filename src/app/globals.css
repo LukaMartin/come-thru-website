@@ -1,8 +1,14 @@
 @import "tailwindcss";
 
+@custom-variant small-laptop {
+  @media (width >= 1024px) and (width <= 1150px) {
+    @slot;
+  }
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #050505;
+  --foreground: #f8fafc;
 }
 
 @theme inline {
@@ -12,15 +18,36 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  overflow-y: scroll;
+  scrollbar-color: rgba(215, 199, 173, 0.38) #050505;
+  scrollbar-gutter: stable;
+}
+
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: #050505;
+}
+
+::-webkit-scrollbar-thumb {
+  border: 3px solid #050505;
+  border-radius: 999px;
+  background: rgba(215, 199, 173, 0.34);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(215, 199, 173, 0.52);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]) {
+  cursor: pointer;
 }
