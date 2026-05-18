@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { Database } from "@/lib/database.types";
 import { getAppUrl } from "@/lib/env";
 import { getTicketCountsByType } from "@/lib/events";
+import { createOrderReference } from "@/lib/order-reference";
 import { createServiceClient } from "@/lib/supabase/server";
 import { createStripeClient } from "@/lib/stripe";
 
@@ -129,19 +130,12 @@ export async function POST(request: Request) {
     0,
   );
 
-  const { data: order, error: orderError } = await supabase
-    .from("ticketing_orders")
-    .insert({
-      event_id: eventId,
-      amount_total_cents: amountTotal,
-      currency: lineItems[0]?.ticketType.currency ?? "aud",
-    })
-    .select()
-    .single();
-
-  if (orderError) {
-    throw orderError;
-  }
+  const order = await createPendingOrder({
+    amountTotal,
+    currency: lineItems[0]?.ticketType.currency ?? "aud",
+    eventId,
+    supabase,
+  });
 
   try {
     const session = await stripe.checkout.sessions.create({
@@ -177,4 +171,39 @@ export async function POST(request: Request) {
       .eq("id", order.id);
     throw error;
   }
+}
+
+async function createPendingOrder({
+  amountTotal,
+  currency,
+  eventId,
+  supabase,
+}: {
+  amountTotal: number;
+  currency: string;
+  eventId: string;
+  supabase: ReturnType<typeof createServiceClient>;
+}) {
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const { data, error } = await supabase
+      .from("ticketing_orders")
+      .insert({
+        event_id: eventId,
+        amount_total_cents: amountTotal,
+        currency,
+        order_reference: createOrderReference(),
+      })
+      .select()
+      .single();
+
+    if (!error) {
+      return data;
+    }
+
+    if (error.code !== "23505") {
+      throw error;
+    }
+  }
+
+  throw new Error("Could not create a unique order reference.");
 }

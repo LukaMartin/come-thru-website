@@ -93,6 +93,34 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     return;
   }
 
+  if (order.status !== "pending") {
+    throw new Error(`Order cannot be fulfilled from status ${order.status}.`);
+  }
+
+  if (order.stripe_checkout_session_id !== session.id) {
+    throw new Error("Stripe session does not match the pending order.");
+  }
+
+  if (session.payment_status !== "paid") {
+    throw new Error("Stripe session is not paid.");
+  }
+
+  if (
+    session.amount_total !== null &&
+    session.amount_total !== order.amount_total_cents
+  ) {
+    throw new Error("Stripe session amount does not match the pending order.");
+  }
+
+  if (
+    session.currency &&
+    session.currency.toLowerCase() !== order.currency.toLowerCase()
+  ) {
+    throw new Error(
+      "Stripe session currency does not match the pending order.",
+    );
+  }
+
   const { data: event, error: eventError } = await supabase
     .from("ticketing_events")
     .select("*")
@@ -268,6 +296,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       startsAt: event.starts_at,
       endsAt: event.ends_at,
       orderTotalCents: session.amount_total ?? order.amount_total_cents,
+      orderReference: order.order_reference,
       currency: session.currency ?? order.currency,
       tickets: emailTickets,
       venueAddress: event.venue_address,

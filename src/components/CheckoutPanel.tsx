@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { BsChevronCompactUp } from "react-icons/bs";
 import { TbChevronCompactUp } from "react-icons/tb";
 import { twMerge } from "tailwind-merge";
 
@@ -15,6 +14,8 @@ type TicketOption = {
   currency: string;
   capacity: number;
   sold: number;
+  sales_start_at: string | null;
+  sales_end_at: string | null;
 };
 
 type CheckoutPanelProps = {

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { formatMoney } from "@/lib/tickets";
 import { twMerge } from "tailwind-merge";
 
@@ -13,6 +13,8 @@ type TicketOption = {
   currency: string;
   capacity: number;
   sold: number;
+  sales_start_at: string | null;
+  sales_end_at: string | null;
 };
 
 type CheckoutFormProps = {
@@ -77,18 +79,58 @@ export function CheckoutForm({ eventId, isFree, tickets }: CheckoutFormProps) {
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentTime, setCurrentTime] = useState(() => Date.now());
 
   const total = useMemo(
     () =>
       tickets.reduce(
-        (sum, ticket) => sum + (quantities[ticket.id] ?? 0) * ticket.price_cents,
+        (sum, ticket) =>
+          sum + (quantities[ticket.id] ?? 0) * ticket.price_cents,
         0,
       ),
     [quantities, tickets],
   );
-  const isSoldOut = tickets.every((ticket) => ticket.capacity - ticket.sold <= 0);
+  const isSoldOut = tickets.every(
+    (ticket) => ticket.capacity - ticket.sold <= 0,
+  );
+  const saleWindow = useMemo(() => {
+    const ticket = tickets[0];
+
+    return {
+      startsAt: ticket?.sales_start_at
+        ? new Date(ticket.sales_start_at).getTime()
+        : null,
+      endsAt: ticket?.sales_end_at
+        ? new Date(ticket.sales_end_at).getTime()
+        : null,
+    };
+  }, [tickets]);
+  const isSaleActive =
+    (saleWindow.startsAt === null || currentTime >= saleWindow.startsAt) &&
+    (saleWindow.endsAt === null || currentTime <= saleWindow.endsAt);
+
+  useEffect(() => {
+    const nextBoundary = [saleWindow.startsAt, saleWindow.endsAt]
+      .filter((time): time is number => time !== null && time > currentTime)
+      .sort((a, b) => a - b)[0];
+
+    if (!nextBoundary) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(
+      () => setCurrentTime(Date.now()),
+      nextBoundary - currentTime,
+    );
+
+    return () => window.clearTimeout(timeoutId);
+  }, [currentTime, saleWindow.endsAt, saleWindow.startsAt]);
 
   async function startCheckout() {
+    if (!isSaleActive) {
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
@@ -117,7 +159,11 @@ export function CheckoutForm({ eventId, isFree, tickets }: CheckoutFormProps) {
 
       window.location.href = payload.url;
     } catch (checkoutError) {
-      setError(checkoutError instanceof Error ? checkoutError.message : "Checkout failed.");
+      setError(
+        checkoutError instanceof Error
+          ? checkoutError.message
+          : "Checkout failed.",
+      );
       setIsLoading(false);
     }
   }
@@ -132,13 +178,14 @@ export function CheckoutForm({ eventId, isFree, tickets }: CheckoutFormProps) {
               No checkout required
             </h3>
             <p className="mt-3 text-sm leading-6 text-[#f3eadb]/62 md:text-base md:leading-8 small-laptop:leading-7">
-              This event is free to attend, so there are no ticket options or payment steps.
-              Check the event details, bring your friends and come through.
+              This event is free to attend, there are no ticket options or
+              payment steps. Check the event details, bring your friends and
+              come through.
             </p>
           </div>
         </div>
         <p className="px-2 text-center text-[0.7rem] leading-5 text-[#f3eadb]/42 lg:text-xs">
-          Entry may still be subject to venue capacity and door policy.
+          Entry is still subject to venue capacity and door policy.
         </p>
       </div>
     );
@@ -153,7 +200,10 @@ export function CheckoutForm({ eventId, isFree, tickets }: CheckoutFormProps) {
         const isTicketSoldOut = remaining === 0;
 
         return (
-          <div key={ticket.id} className="border border-[#f3eadb]/12 bg-black/24 p-3 lg:p-5">
+          <div
+            key={ticket.id}
+            className="border border-[#f3eadb]/12 bg-black/24 p-3 lg:p-5"
+          >
             <div className="flex items-center justify-between gap-3 lg:gap-4">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
@@ -177,7 +227,7 @@ export function CheckoutForm({ eventId, isFree, tickets }: CheckoutFormProps) {
               </div>
 
               <QuantityStepper
-                disabled={isTicketSoldOut || isLoading}
+                disabled={isTicketSoldOut || !isSaleActive || isLoading}
                 max={maxQuantity}
                 ticketId={ticket.id}
                 value={selected}
@@ -198,15 +248,17 @@ export function CheckoutForm({ eventId, isFree, tickets }: CheckoutFormProps) {
 
       <button
         type="button"
-        disabled={isSoldOut || total === 0 || isLoading}
+        disabled={isSoldOut || !isSaleActive || total === 0 || isLoading}
         onClick={startCheckout}
         className="w-full rounded-full bg-[#f8f0e3] px-6 py-2.5 text-sm font-semibold uppercase tracking-[0.18em] text-black transition duration-300 hover:bg-white disabled:cursor-not-allowed disabled:opacity-40 small-laptop:py-3 lg:py-4 lg:text-base"
       >
         {isSoldOut
           ? "Sold Out"
-          : isLoading
-            ? "Opening checkout..."
-            : `Checkout · ${formatMoney(total)}`}
+          : !isSaleActive
+            ? "Sales Closed"
+            : isLoading
+              ? "Opening checkout..."
+              : `Checkout · ${formatMoney(total)}`}
       </button>
       <p className="px-2 text-center text-[0.7rem] leading-5 text-[#f3eadb]/42 lg:text-xs">
         By purchasing a ticket, you agree to the{" "}
