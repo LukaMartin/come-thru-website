@@ -91,6 +91,10 @@ export type Database = {
           currency: string;
           status: "pending" | "paid" | "failed" | "refunded" | "cancelled";
           order_reference: string;
+          ticket_email_status: "pending" | "sent" | "failed" | "skipped";
+          ticket_email_sent_at: string | null;
+          ticket_email_failed_at: string | null;
+          ticket_email_error: string | null;
           created_at: string;
         };
         Insert: {
@@ -104,6 +108,10 @@ export type Database = {
           currency?: string;
           status?: "pending" | "paid" | "failed" | "refunded" | "cancelled";
           order_reference: string;
+          ticket_email_status?: "pending" | "sent" | "failed" | "skipped";
+          ticket_email_sent_at?: string | null;
+          ticket_email_failed_at?: string | null;
+          ticket_email_error?: string | null;
           created_at?: string;
         };
         Update: Partial<
@@ -215,12 +223,52 @@ export type Database = {
           email: string;
           created_at?: string;
         };
-        Update: Partial<
-          Database["public"]["Tables"]["admin_users"]["Insert"]
-        >;
+        Update: Partial<Database["public"]["Tables"]["admin_users"]["Insert"]>;
       };
     };
     Functions: {
+      ticketing_fulfill_checkout_session: {
+        Args: {
+          p_webhook_event_id: string;
+          p_webhook_event_type: string;
+          p_order_id: string;
+          p_stripe_checkout_session_id: string;
+          p_stripe_payment_intent_id: string | null;
+          p_payment_status: string;
+          p_amount_total_cents: number | null;
+          p_currency: string | null;
+          p_buyer_email: string | null;
+          p_buyer_name: string | null;
+          p_order_items: Json;
+          p_tickets: Json;
+        };
+        Returns: {
+          processed: boolean;
+          duplicate: boolean;
+          capacity_exceeded: boolean;
+          failure_reason: string | null;
+          order_id: string | null;
+          event_id: string | null;
+          event_name: string | null;
+          venue: string | null;
+          venue_address: string | null;
+          starts_at: string | null;
+          ends_at: string | null;
+          order_reference: string | null;
+          order_total_cents: number | null;
+          order_currency: string | null;
+          ticket_email_status: "pending" | "sent" | "failed" | "skipped" | null;
+          tickets: Json;
+        }[];
+      };
+      ticketing_mark_ticket_email_delivery: {
+        Args: {
+          p_order_id: string;
+          p_status: "sent" | "failed" | "skipped";
+          p_error?: string | null;
+        };
+        Returns: undefined;
+      };
       ticketing_publish_current_event: {
         Args: {
           p_event_id: string;

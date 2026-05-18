@@ -61,16 +61,13 @@ export async function sendTicketEmail(input: TicketEmailInput) {
   const from = process.env.EMAIL_FROM;
 
   if (!apiKey || !from) {
-    console.warn(
-      "Skipping ticket email because RESEND_API_KEY or EMAIL_FROM is missing.",
-    );
-    return;
+    throw new Error("RESEND_API_KEY and EMAIL_FROM are required to send tickets.");
   }
 
   const resend = new Resend(apiKey);
   const ticketsPdf = await createTicketsPdf(input);
 
-  await resend.emails.send({
+  const result = await resend.emails.send({
     from,
     to: input.to,
     subject: `Your tickets for ${input.eventName} (Order ${input.orderReference})`,
@@ -83,6 +80,8 @@ export async function sendTicketEmail(input: TicketEmailInput) {
       },
     ],
   });
+
+  assertResendSuccess(result, "ticket email");
 }
 
 export async function sendContactEmail(input: SendContactEmailInput) {
@@ -94,7 +93,7 @@ export async function sendContactEmail(input: SendContactEmailInput) {
 
   const resend = new Resend(apiKey);
 
-  await resend.emails.send({
+  const result = await resend.emails.send({
     from: withDisplayName(SUPPORT_EMAIL, "Come Thru Support"),
     to: CONTACT_EMAIL,
     replyTo: input.email,
@@ -102,6 +101,25 @@ export async function sendContactEmail(input: SendContactEmailInput) {
     html: renderContactEmail(input),
     text: renderContactEmailText(input),
   });
+
+  assertResendSuccess(result, "contact email");
+}
+
+function assertResendSuccess(
+  result: unknown,
+  description: "ticket email" | "contact email",
+) {
+  const resendResult = result as {
+    error?: { message?: string; name?: string } | null;
+  };
+
+  if (resendResult.error) {
+    throw new Error(
+      resendResult.error.message ??
+        resendResult.error.name ??
+        `Failed to send ${description}.`,
+    );
+  }
 }
 
 export function renderTicketEmail(input: TicketEmailInput) {

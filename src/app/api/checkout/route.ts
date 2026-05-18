@@ -75,6 +75,8 @@ export async function POST(request: Request) {
     ticketType: TicketType;
     quantity: number;
     stripePriceId: string;
+    stripeUnitAmount: number;
+    stripeCurrency: string;
   }[] = [];
 
   for (const item of items) {
@@ -118,21 +120,42 @@ export async function POST(request: Request) {
       );
     }
 
+    const stripePrice = await stripe.prices.retrieve(stripePriceId);
+    const stripeUnitAmount = stripePrice.unit_amount;
+    const stripeCurrency = stripePrice.currency.toLowerCase();
+
+    if (stripeUnitAmount === null) {
+      return Response.json(
+        { error: `${ticketType.name} has an unsupported Stripe price type.` },
+        { status: 400 },
+      );
+    }
+
     lineItems.push({
       ticketType,
       quantity: item.quantity,
       stripePriceId,
+      stripeUnitAmount,
+      stripeCurrency,
     });
   }
 
   const amountTotal = lineItems.reduce(
-    (sum, item) => sum + item.ticketType.price_cents * item.quantity,
+    (sum, item) => sum + item.stripeUnitAmount * item.quantity,
     0,
   );
+  const currency = lineItems[0]?.stripeCurrency ?? "aud";
+
+  if (lineItems.some((item) => item.stripeCurrency !== currency)) {
+    return Response.json(
+      { error: "All selected tickets must use the same currency." },
+      { status: 400 },
+    );
+  }
 
   const order = await createPendingOrder({
     amountTotal,
-    currency: lineItems[0]?.ticketType.currency ?? "aud",
+    currency,
     eventId,
     supabase,
   });

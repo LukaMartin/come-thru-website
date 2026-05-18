@@ -6,6 +6,10 @@ export function createTicketSecret() {
   return crypto.randomBytes(24).toString("base64url");
 }
 
+export function createTicketCode() {
+  return crypto.randomBytes(12).toString("hex");
+}
+
 export function hashTicketSecret(secret: string) {
   return crypto.createHash("sha256").update(secret).digest("hex");
 }
@@ -16,7 +20,10 @@ export function getTicketUrl(ticketCode: string, secret: string) {
   return url.toString();
 }
 
-export async function createTicketQrDataUrl(ticketCode: string, secret: string) {
+export async function createTicketQrDataUrl(
+  ticketCode: string,
+  secret: string,
+) {
   return QRCode.toDataURL(getTicketUrl(ticketCode, secret), {
     errorCorrectionLevel: "M",
     margin: 1,
@@ -57,7 +64,10 @@ export function formatEventDate(value: string) {
   }).format(new Date(value));
 }
 
-export function formatEventDateRange(startValue: string, endValue?: string | null) {
+export function formatEventDateRange(
+  startValue: string,
+  endValue?: string | null,
+) {
   const start = new Date(startValue);
   const end = endValue ? new Date(endValue) : null;
   const date = formatShortEventDate(start);
