@@ -20,6 +20,7 @@ export type TicketEmailInput = {
   startsAt: string;
   endsAt?: string | null;
   orderTotalCents: number;
+  orderReference: string;
   currency: string;
   tickets: EmailTicket[];
 };
@@ -72,7 +73,7 @@ export async function sendTicketEmail(input: TicketEmailInput) {
   await resend.emails.send({
     from,
     to: input.to,
-    subject: `Your tickets for ${input.eventName}`,
+    subject: `Your tickets for ${input.eventName} (Order ${input.orderReference})`,
     html: renderTicketEmail(input),
     attachments: [
       {

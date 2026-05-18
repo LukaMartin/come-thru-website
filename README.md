@@ -11,8 +11,6 @@ It is a Next.js app with:
 - Stripe webhooks that create tickets after payment
 - PDF ticket emails through Resend
 - QR ticket generation
-- a phone-friendly admin scanner for door staff
-- Supabase tables and an atomic ticket redemption function
 - contact, FAQ, terms, privacy, success, and error pages
 
 ## Main Routes
@@ -20,7 +18,6 @@ It is a Next.js app with:
 - `/` shows the brand page, archive gallery, social links, and the current event CTA.
 - `/tickets` shows the current published event, event image, event details, ticket types, remaining capacity, and checkout panel.
 - `/success` confirms payment and tells the buyer to check their email for tickets.
-- `/admin/scan` lets door staff log in with a 6-digit PIN and scan ticket QR codes.
 - `/contact` sends enquiries to the Come Thru team.
 - `/faq`, `/terms`, and `/privacy` are static support/legal pages.
 
@@ -31,9 +28,6 @@ It is a Next.js app with:
 3. Paid events use `/api/checkout` to create a pending order and open Stripe Checkout.
 4. Stripe sends `checkout.session.completed` to `/api/webhooks/stripe`.
 5. The webhook marks the order as paid, creates one `ticketing_tickets` row per purchased ticket, generates QR codes, builds a PDF, and emails the buyer through Resend.
-6. Door staff scan ticket QR codes at `/admin/scan`.
-7. `/api/tickets/redeem` hashes the ticket secret and calls `public.ticketing_redeem_ticket(...)` so redemption is atomic in Postgres.
-8. Each scan is recorded in `ticketing_checkins` as `valid`, `invalid`, `already_redeemed`, `wrong_event`, or the ticket status.
 
 ## Tech Stack
 
@@ -45,7 +39,6 @@ It is a Next.js app with:
 - Resend
 - PDFKit
 - `qrcode`
-- `html5-qrcode`
 - Tailwind CSS 4
 
 ## Environment Variables
@@ -69,8 +62,6 @@ STRIPE_WEBHOOK_SECRET=
 
 RESEND_API_KEY=
 EMAIL_FROM="Come Thru Tickets <tickets@example.com>"
-
-ADMIN_SCAN_PIN=123456
 ```
 
 Notes:
@@ -78,7 +69,6 @@ Notes:
 - `SUPABASE_SERVICE_ROLE_KEY` is used server-side only.
 - `STRIPE_WEBHOOK_SECRET` comes from the Stripe CLI or Stripe dashboard webhook endpoint.
 - `RESEND_API_KEY` and `EMAIL_FROM` are required for ticket emails. Ticket email sending is skipped if either is missing.
-- `ADMIN_SCAN_PIN` must be exactly 6 digits.
 - `NEXT_PUBLIC_APP_URL` is used when building success URLs and ticket QR URLs.
 
 ## Database Setup
@@ -114,25 +104,6 @@ stripe listen --forward-to localhost:3000/api/webhooks/stripe
 Copy the printed `whsec_...` value into `STRIPE_WEBHOOK_SECRET`.
 
 Each paid ticket type must have a Stripe Price ID in `ticketing_ticket_types.stripe_price_id`. The checkout API refuses to sell a ticket type without one.
-
-## Admin Scanner
-
-Open this on a phone:
-
-```text
-/admin/scan
-```
-
-Enter the 6-digit `ADMIN_SCAN_PIN`, allow camera access, then scan each ticket QR once.
-
-Scanner results:
-
-- `valid`: ticket was accepted and redeemed.
-- `already_redeemed`: ticket was real but has already been used.
-- `wrong_event`: ticket is valid, but not for the current event.
-- `invalid`: QR code is not a valid ticket.
-
-The scanner session is stored in an HTTP-only cookie for 12 hours.
 
 ## Local Development
 

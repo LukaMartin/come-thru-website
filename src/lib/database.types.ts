@@ -90,6 +90,7 @@ export type Database = {
           amount_total_cents: number;
           currency: string;
           status: "pending" | "paid" | "failed" | "refunded" | "cancelled";
+          order_reference: string;
           created_at: string;
         };
         Insert: {
@@ -102,6 +103,7 @@ export type Database = {
           amount_total_cents?: number;
           currency?: string;
           status?: "pending" | "paid" | "failed" | "refunded" | "cancelled";
+          order_reference: string;
           created_at?: string;
         };
         Update: Partial<
@@ -202,8 +204,30 @@ export type Database = {
           Database["public"]["Tables"]["ticketing_webhook_events"]["Insert"]
         >;
       };
+      admin_users: {
+        Row: {
+          user_id: string;
+          email: string;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          email: string;
+          created_at?: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["admin_users"]["Insert"]
+        >;
+      };
     };
     Functions: {
+      ticketing_publish_current_event: {
+        Args: {
+          p_event_id: string;
+          p_archive_previous?: boolean;
+        };
+        Returns: Database["public"]["Tables"]["ticketing_events"]["Row"];
+      };
       ticketing_redeem_ticket: {
         Args: {
           p_ticket_code: string;

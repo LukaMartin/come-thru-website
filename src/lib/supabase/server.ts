@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { assertServerEnv, requireEnv } from "@/lib/env";
+import { assertAuthEnv, assertServerEnv, requireEnv } from "@/lib/env";
 
 export function createServiceClient() {
   assertServerEnv();
@@ -10,6 +10,22 @@ export function createServiceClient() {
     {
       auth: {
         autoRefreshToken: false,
+        persistSession: false,
+      },
+    },
+  );
+}
+
+export function createAuthClient() {
+  assertAuthEnv();
+
+  return createClient(
+    requireEnv("SUPABASE_URL"),
+    requireEnv("SUPABASE_AUTH_ANON_KEY"),
+    {
+      auth: {
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
         persistSession: false,
       },
     },

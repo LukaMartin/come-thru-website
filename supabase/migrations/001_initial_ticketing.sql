@@ -39,6 +39,7 @@ create table public.ticketing_orders (
   stripe_payment_intent_id text,
   buyer_email text,
   buyer_name text,
+  order_reference text not null unique,
   amount_total_cents integer not null default 0,
   currency text not null default 'aud',
   status text not null default 'pending' check (status in ('pending', 'paid', 'failed', 'refunded', 'cancelled')),
@@ -208,3 +209,14 @@ begin
   return next;
 end;
 $$;
+
+revoke execute on function public.ticketing_redeem_ticket(text, text, uuid, text)
+  from public, anon, authenticated;
+grant execute on function public.ticketing_redeem_ticket(text, text, uuid, text)
+  to service_role;
+
+revoke execute on function public.ticketing_redeem_ticket_by_id(uuid, uuid, text)
+  from public, anon, authenticated;
+
+grant execute on function public.ticketing_redeem_ticket_by_id(uuid, uuid, text)
+  to service_role;
