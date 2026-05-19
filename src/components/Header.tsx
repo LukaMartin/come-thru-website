@@ -23,7 +23,7 @@ export function Header() {
   }, [isOpen]);
 
   return (
-    <header className="sticky top-0 z-50 -mx-5 border-b border-[#f3eadb]/12 bg-[#050505]/96 px-5 py-6 text-sm text-[#f3eadb]/58 backdrop-blur sm:-mx-6 sm:px-6 md:relative md:mx-0 md:bg-transparent md:px-0 md:py-8 md:backdrop-blur-none">
+    <header className="sticky top-0 z-50 -mx-5 border-b border-[#f3eadb]/12 bg-[#070605]/96 px-5 py-6 text-sm text-[#f3eadb]/58 backdrop-blur sm:-mx-6 sm:px-6 md:relative md:mx-0 md:px-0 md:py-8">
       <div className="relative z-50 flex items-center justify-between gap-4">
         <Link
           href="/"
@@ -72,7 +72,7 @@ export function Header() {
       </div>
 
       <nav
-        className={`fixed inset-0 z-40 flex h-dvh w-screen flex-col justify-center bg-[#050505] px-6 text-right transition duration-300 ease-out md:hidden ${
+        className={`fixed inset-0 z-40 flex h-dvh w-screen flex-col justify-center bg-[#070605] px-6 text-right transition duration-300 ease-out md:hidden ${
           isOpen
             ? "translate-x-0 opacity-100"
             : "pointer-events-none translate-x-full opacity-0"

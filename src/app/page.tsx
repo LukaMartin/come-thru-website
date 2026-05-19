@@ -36,16 +36,16 @@ export default async function Home() {
   }
 
   return (
-    <main className="relative min-h-dvh overflow-hidden bg-[#050505] px-5 text-[#f8f0e3] sm:px-6">
+    <main className="relative min-h-dvh overflow-hidden bg-[#070605] px-5 text-[#f8f0e3] sm:px-6">
       <div className="pointer-events-none fixed inset-0 z-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.045)_0_1px,transparent_1px_18px)]" />
       <div className="relative z-10 mx-auto flex min-h-dvh w-full max-w-6xl flex-col gap-8">
         <Header />
 
         <section className="grid items-stretch gap-6 pt-8 md:pt-12 lg:grid-cols-[1.08fr_0.92fr]">
-          <div className="relative flex min-h-136 flex-col justify-between overflow-hidden border-y border-[#f3eadb]/16 bg-[radial-gradient(circle_at_18%_24%,rgba(172,67,43,0.28),transparent_36%),radial-gradient(circle_at_78%_76%,rgba(215,199,173,0.16),transparent_32%),radial-gradient(circle_at_54%_56%,rgba(242,171,82,0.08),transparent_34%)] px-5 py-8 md:min-h-168 md:px-6 md:py-10 lg:border-l lg:px-8">
-            <div className="pointer-events-none absolute -left-16 top-28 h-64 w-64 rounded-full bg-[#b5482f]/22 blur-3xl" />
-            <div className="pointer-events-none absolute bottom-8 right-8 h-52 w-52 rounded-full bg-[#d7c7ad]/14 blur-3xl" />
-            <div className="pointer-events-none absolute left-1/3 bottom-1/4 h-48 w-48 rounded-full bg-[#f2ab52]/8 blur-3xl" />
+          <div className="relative flex min-h-136 flex-col justify-between overflow-hidden border-y border-[#f3eadb]/16 bg-[radial-gradient(circle_at_18%_24%,rgba(172,67,43,0.36),transparent_36%),radial-gradient(circle_at_78%_76%,rgba(215,199,173,0.2),transparent_32%),radial-gradient(circle_at_54%_56%,rgba(242,171,82,0.12),transparent_34%)] px-5 py-8 md:min-h-168 md:px-6 md:py-10 lg:border-l lg:px-8">
+            <div className="pointer-events-none absolute -left-16 top-28 h-64 w-64 rounded-full bg-[#b5482f]/28 blur-3xl" />
+            <div className="pointer-events-none absolute bottom-8 right-8 h-52 w-52 rounded-full bg-[#d7c7ad]/18 blur-3xl" />
+            <div className="pointer-events-none absolute left-1/3 bottom-1/4 h-48 w-48 rounded-full bg-[#f2ab52]/12 blur-3xl" />
 
             <div className="relative">
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[0.68rem] uppercase tracking-[0.34em] text-[#d7c7ad]/70">
@@ -97,10 +97,10 @@ export default async function Home() {
             </div>
           </div>
 
-          <aside className="relative min-h-136 overflow-hidden border border-[#f3eadb]/14 bg-[radial-gradient(circle_at_78%_16%,rgba(214,97,139,0.24),transparent_32%),radial-gradient(circle_at_16%_84%,rgba(218,82,42,0.34),transparent_38%),radial-gradient(circle_at_52%_56%,rgba(242,171,82,0.16),transparent_36%),#080706] p-5 shadow-2xl shadow-black/40 md:min-h-168 md:p-6">
-            <div className="pointer-events-none absolute -right-24 top-8 h-64 w-64 rounded-full bg-[#d6618b]/18 blur-3xl" />
-            <div className="pointer-events-none absolute -left-24 bottom-8 h-72 w-72 rounded-full bg-[#da522a]/24 blur-3xl" />
-            <div className="pointer-events-none absolute right-4 bottom-20 h-56 w-56 rounded-full bg-[#f2ab52]/12 blur-3xl" />
+          <aside className="relative min-h-136 overflow-hidden border border-[#f3eadb]/14 bg-[radial-gradient(circle_at_78%_16%,rgba(214,97,139,0.34),transparent_32%),radial-gradient(circle_at_16%_84%,rgba(218,82,42,0.46),transparent_38%),radial-gradient(circle_at_52%_56%,rgba(242,171,82,0.24),transparent_36%),#0d0908] p-5 shadow-2xl shadow-black/40 md:min-h-168 md:p-6">
+            <div className="pointer-events-none absolute -right-24 top-8 h-64 w-64 rounded-full bg-[#d6618b]/28 blur-3xl" />
+            <div className="pointer-events-none absolute -left-24 bottom-8 h-72 w-72 rounded-full bg-[#da522a]/34 blur-3xl" />
+            <div className="pointer-events-none absolute right-4 bottom-20 h-56 w-56 rounded-full bg-[#f2ab52]/20 blur-3xl" />
             <div className="pointer-events-none absolute -left-28 top-34 h-44 w-[145%] -rotate-12 bg-[linear-gradient(90deg,transparent,rgba(242,171,82,0.22),rgba(218,82,42,0.24),rgba(214,97,139,0.18),transparent)] blur-xl" />
             <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.055)_0_1px,transparent_1px_18px),radial-gradient(circle_at_48%_58%,rgba(5,5,5,0.34),transparent_46%),linear-gradient(180deg,rgba(5,5,5,0.06),rgba(5,5,5,0.46))]" />
             <div className="relative z-10 flex h-full min-h-124 flex-col justify-between border border-[#f3eadb]/18 p-5 md:min-h-156 md:p-7">

@@ -23,16 +23,16 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
   }, [error]);
 
   return (
-    <main className="relative min-h-dvh overflow-hidden bg-[#050505] px-5 text-[#f8f0e3] sm:px-6">
+    <main className="relative min-h-dvh overflow-hidden bg-[#070605] px-5 text-[#f8f0e3] sm:px-6">
       <div className="pointer-events-none fixed inset-0 z-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.045)_0_1px,transparent_1px_18px)]" />
       <div className="relative z-10 mx-auto flex min-h-dvh w-full max-w-6xl flex-col gap-8">
         <Header />
 
         <section className="flex flex-1 items-center py-8 md:py-12">
-          <div className="relative w-full overflow-hidden border border-[#f3eadb]/14 bg-[radial-gradient(circle_at_18%_18%,rgba(172,67,43,0.18),transparent_34%),radial-gradient(circle_at_82%_22%,rgba(215,199,173,0.08),transparent_28%),radial-gradient(circle_at_68%_82%,rgba(242,171,82,0.07),transparent_30%),rgba(8,7,6,0.92)] p-6 text-center shadow-2xl shadow-black/30 md:p-10">
-            <div className="pointer-events-none absolute -left-16 top-12 h-52 w-52 rounded-full bg-[#b5482f]/10 blur-3xl" />
-            <div className="pointer-events-none absolute -right-12 bottom-8 h-44 w-44 rounded-full bg-[#d7c7ad]/7 blur-3xl" />
-            <div className="pointer-events-none absolute left-1/2 top-1/2 h-56 w-56 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#f2ab52]/5 blur-3xl" />
+          <div className="relative w-full overflow-hidden border border-[#f3eadb]/14 bg-[radial-gradient(circle_at_18%_18%,rgba(172,67,43,0.34),transparent_34%),radial-gradient(circle_at_82%_22%,rgba(215,199,173,0.16),transparent_28%),radial-gradient(circle_at_68%_82%,rgba(242,171,82,0.14),transparent_30%),rgba(13,9,8,0.94)] p-6 text-center shadow-2xl shadow-black/30 md:p-10">
+            <div className="pointer-events-none absolute -left-16 top-12 h-52 w-52 rounded-full bg-[#b5482f]/22 blur-3xl" />
+            <div className="pointer-events-none absolute -right-12 bottom-8 h-44 w-44 rounded-full bg-[#d7c7ad]/14 blur-3xl" />
+            <div className="pointer-events-none absolute left-1/2 top-1/2 h-56 w-56 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#f2ab52]/12 blur-3xl" />
 
             <div className="relative mx-auto max-w-2xl">
               <div className="flex items-center justify-center gap-4">

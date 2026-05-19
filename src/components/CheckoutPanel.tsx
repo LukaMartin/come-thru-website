@@ -1,5 +1,6 @@
 "use client";
 
+import type { TouchEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import { TbChevronCompactUp } from "react-icons/tb";
 import { twMerge } from "tailwind-merge";
@@ -32,6 +33,7 @@ export function CheckoutPanel({
   const [isLowered, setIsLowered] = useState(false);
   const panelRef = useRef<HTMLElement | null>(null);
   const touchStartY = useRef<number | null>(null);
+  const didSwipePanel = useRef(false);
 
   useEffect(() => {
     const page = document.querySelector<HTMLElement>("[data-tickets-page]");
@@ -80,21 +82,52 @@ export function CheckoutPanel({
 
     const swipeDistance = endY - touchStartY.current;
     touchStartY.current = null;
+    let didSwipe = false;
 
     if (swipeDistance > 36) {
       setIsLowered(true);
+      didSwipe = true;
     }
 
     if (swipeDistance < -36) {
       setIsLowered(false);
+      didSwipe = true;
     }
+
+    if (didSwipe) {
+      didSwipePanel.current = true;
+      window.setTimeout(() => {
+        didSwipePanel.current = false;
+      }, 350);
+    }
+  }
+
+  function handleTouchStart(event: TouchEvent<HTMLButtonElement>) {
+    touchStartY.current = event.touches[0]?.clientY ?? null;
+  }
+
+  function handleTouchMove(event: TouchEvent<HTMLButtonElement>) {
+    if (touchStartY.current === null) {
+      return;
+    }
+
+    event.preventDefault();
+  }
+
+  function handleToggleClick() {
+    if (didSwipePanel.current) {
+      didSwipePanel.current = false;
+      return;
+    }
+
+    setIsLowered((current) => !current);
   }
 
   return (
     <aside
       ref={panelRef}
       className={twMerge(
-        "fixed inset-x-0 bottom-0 z-20 max-h-[70vh] overflow-y-auto rounded-t-4xl border border-[#f3eadb]/14 bg-[#080706]/96 px-5 pt-3 pb-4 shadow-2xl shadow-black/60 backdrop-blur transition-transform duration-300 ease-in-out lg:sticky lg:top-8 lg:inset-auto lg:z-auto lg:max-h-none lg:translate-y-0 lg:overflow-visible lg:rounded-none lg:bg-[#080706]/90 small-laptop:p-4.5 lg:p-8",
+        "fixed inset-x-0 bottom-0 z-20 max-h-[70vh] overflow-y-auto overscroll-contain rounded-t-4xl border border-[#f3eadb]/14 bg-[#0d0908]/98 px-5 pt-3 pb-4 shadow-2xl shadow-black/60 backdrop-blur transition-transform duration-300 ease-in-out [touch-action:pan-y] lg:sticky lg:top-8 lg:inset-auto lg:z-auto lg:max-h-none lg:translate-y-0 lg:overflow-visible lg:rounded-none lg:bg-[#080706]/90 small-laptop:p-4.5 lg:p-8",
         isLowered && "translate-y-[calc(100%-4.65rem)]",
       )}
     >
@@ -104,14 +137,16 @@ export function CheckoutPanel({
           isLowered ? "Expand checkout panel" : "Lower checkout panel"
         }
         aria-expanded={!isLowered}
-        onClick={() => setIsLowered((current) => !current)}
-        onTouchStart={(event) => {
-          touchStartY.current = event.touches[0]?.clientY ?? null;
-        }}
+        onClick={handleToggleClick}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
         onTouchEnd={(event) => {
           handleTouchEnd(event.changedTouches[0]?.clientY ?? 0);
         }}
-        className="mx-auto mb-3 flex w-full flex-col items-center justify-center gap-0 py-2 text-[#f8f0e3]/70 transition hover:text-[#f8f0e3] lg:hidden"
+        onTouchCancel={() => {
+          touchStartY.current = null;
+        }}
+        className="mx-auto mb-3 flex w-full touch-none select-none flex-col items-center justify-center gap-0 py-2 text-[#f8f0e3]/70 transition hover:text-[#f8f0e3] lg:hidden"
       >
         <TbChevronCompactUp
           aria-hidden="true"

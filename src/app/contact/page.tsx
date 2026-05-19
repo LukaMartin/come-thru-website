@@ -11,16 +11,16 @@ export const metadata: Metadata = {
 
 export default function ContactPage() {
   return (
-    <main className="relative min-h-dvh overflow-hidden bg-[#050505] px-5 text-[#f8f0e3] sm:px-6">
+    <main className="relative min-h-dvh overflow-hidden bg-[#070605] px-5 text-[#f8f0e3] sm:px-6">
       <div className="pointer-events-none fixed inset-0 z-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.045)_0_1px,transparent_1px_18px)]" />
       <div className="relative z-10 mx-auto flex min-h-dvh w-full max-w-6xl flex-col gap-8">
         <Header />
 
         <section className="grid gap-8 py-8 md:py-12 lg:grid-cols-[0.82fr_1.18fr] lg:gap-16 small-laptop:gap-10">
-          <div className="relative overflow-hidden border border-[#f3eadb]/14 bg-[radial-gradient(circle_at_20%_20%,rgba(172,67,43,0.26),transparent_36%),radial-gradient(circle_at_78%_76%,rgba(215,199,173,0.14),transparent_32%),radial-gradient(circle_at_48%_58%,rgba(242,171,82,0.08),transparent_34%),#080706] p-6 md:p-8">
-            <div className="pointer-events-none absolute -left-16 top-24 h-56 w-56 rounded-full bg-[#b5482f]/20 blur-3xl" />
-            <div className="pointer-events-none absolute bottom-10 right-10 h-48 w-48 rounded-full bg-[#d7c7ad]/12 blur-3xl" />
-            <div className="pointer-events-none absolute left-1/3 bottom-1/4 h-40 w-40 rounded-full bg-[#f2ab52]/8 blur-3xl" />
+          <div className="relative overflow-hidden border border-[#f3eadb]/14 bg-[radial-gradient(circle_at_20%_20%,rgba(172,67,43,0.38),transparent_36%),radial-gradient(circle_at_78%_76%,rgba(215,199,173,0.22),transparent_32%),radial-gradient(circle_at_48%_58%,rgba(242,171,82,0.16),transparent_34%),#0d0908] p-6 md:p-8">
+            <div className="pointer-events-none absolute -left-16 top-24 h-56 w-56 rounded-full bg-[#b5482f]/30 blur-3xl" />
+            <div className="pointer-events-none absolute bottom-10 right-10 h-48 w-48 rounded-full bg-[#d7c7ad]/20 blur-3xl" />
+            <div className="pointer-events-none absolute left-1/3 bottom-1/4 h-40 w-40 rounded-full bg-[#f2ab52]/16 blur-3xl" />
             <div className="relative">
               <div className="flex items-center gap-4">
                 <p className="text-[0.68rem] uppercase tracking-[0.45em] text-[#d7c7ad]">

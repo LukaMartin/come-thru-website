@@ -171,8 +171,8 @@ export function CheckoutForm({ eventId, isFree, tickets }: CheckoutFormProps) {
   if (isFree) {
     return (
       <div className="space-y-4">
-        <div className="relative overflow-hidden border border-[#f3eadb]/12 bg-[radial-gradient(circle_at_18%_18%,rgba(172,67,43,0.18),transparent_34%),radial-gradient(circle_at_82%_22%,rgba(215,199,173,0.08),transparent_28%),rgba(0,0,0,0.24)] p-4 lg:p-5">
-          <div className="pointer-events-none absolute -right-10 -top-10 size-28 rounded-full bg-[#d7c7ad]/10 blur-2xl" />
+        <div className="relative overflow-hidden border border-[#f3eadb]/12 bg-[radial-gradient(circle_at_18%_18%,rgba(172,67,43,0.34),transparent_34%),radial-gradient(circle_at_82%_22%,rgba(215,199,173,0.16),transparent_28%),rgba(0,0,0,0.28)] p-4 lg:p-5">
+          <div className="pointer-events-none absolute -right-10 -top-10 size-28 rounded-full bg-[#d7c7ad]/18 blur-2xl" />
           <div className="relative">
             <h3 className="text-lg font-black uppercase leading-none tracking-[-0.045em] text-[#f8f0e3] lg:text-3xl small-laptop:text-2xl">
               No checkout required

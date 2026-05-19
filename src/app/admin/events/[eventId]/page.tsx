@@ -65,7 +65,7 @@ export default async function AdminEventPage({ params }: AdminEventPageProps) {
   const createTicketType = createTicketTypeAction.bind(null, event.id);
 
   return (
-    <main className="relative min-h-dvh overflow-hidden bg-[#050505] px-5 py-8 text-[#f8f0e3] sm:px-6">
+    <main className="relative min-h-dvh overflow-hidden bg-[#070605] px-5 py-8 text-[#f8f0e3] sm:px-6">
       <div className="pointer-events-none fixed inset-0 z-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.045)_0_1px,transparent_1px_18px)]" />
       <div className="relative z-10 mx-auto grid w-full max-w-6xl gap-8">
         <header className="grid gap-5 border-b border-[#f3eadb]/12 pb-6 md:grid-cols-[1fr_auto]">
