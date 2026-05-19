@@ -87,6 +87,7 @@ export default async function AdminEventsPage() {
             <Link
               key={event.id}
               href={`/admin/events/${event.id}`}
+              prefetch={false}
               className="group grid gap-4 border border-[#f3eadb]/14 bg-[radial-gradient(circle_at_18%_18%,rgba(172,67,43,0.26),transparent_34%),#0d0908] p-5 transition hover:border-[#d7c7ad]/45 md:grid-cols-[1fr_auto]"
             >
               <div>

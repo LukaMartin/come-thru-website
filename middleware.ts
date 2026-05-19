@@ -78,8 +78,7 @@ export async function middleware(request: NextRequest) {
   );
 
   if (!tokenResponse.ok) {
-    response.cookies.delete(adminAccessTokenCookie);
-    response.cookies.delete(adminRefreshTokenCookie);
+    // Refresh tokens rotate; a concurrent request may have already replaced this one.
     return response;
   }
 
