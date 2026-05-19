@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import QRCode from "qrcode";
 import {
   createSessionAuthClient,
   persistCurrentAuthSession,
@@ -29,6 +30,24 @@ function getFormString(formData: FormData, key: string) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+async function createAdminTotpQrCode(secret: string, accountName: string) {
+  const issuer = "Come Thru Admin";
+  const label = `${encodeURIComponent(issuer)}:${encodeURIComponent(accountName)}`;
+  const params = [
+    `secret=${encodeURIComponent(secret)}`,
+    `issuer=${encodeURIComponent(issuer)}`,
+    "algorithm=SHA1",
+    "digits=6",
+    "period=30",
+  ].join("&");
+
+  return QRCode.toDataURL(`otpauth://totp/${label}?${params}`, {
+    errorCorrectionLevel: "M",
+    margin: 1,
+    width: 208,
+  });
+}
+
 export async function loginAdminAction(
   _state: LoginFormState,
   formData: FormData,
@@ -55,7 +74,7 @@ export async function enrollMfaAction(
   void _state;
 
   try {
-    const { supabase } = await createSessionAuthClient();
+    const { supabase, session } = await createSessionAuthClient();
     const { data, error } = await supabase.auth.mfa.enroll({
       factorType: "totp",
       friendlyName: `Come Thru Admin ${new Date().toISOString()}`,
@@ -67,7 +86,10 @@ export async function enrollMfaAction(
 
     return {
       factorId: data.id,
-      qrCode: data.totp.qr_code,
+      qrCode: await createAdminTotpQrCode(
+        data.totp.secret,
+        session.user.email ?? "admin",
+      ),
       secret: data.totp.secret,
     };
   } catch (error) {

@@ -119,7 +119,7 @@ export async function requireAdmin() {
   const state = await getAdminAuthState();
 
   if (state.status === "anonymous") {
-    redirect(`/admin/login?error=${state.reason}`);
+    redirect("/admin/login");
   }
 
   if (state.status === "needs_mfa") {
@@ -127,7 +127,7 @@ export async function requireAdmin() {
   }
 
   if (state.status === "not_admin") {
-    redirect("/admin/login?error=not-authorized");
+    redirect("/admin/login");
   }
 
   return state.user;
@@ -137,12 +137,12 @@ export async function requireAdminForMfa() {
   const state = await getAdminAuthState();
 
   if (state.status === "anonymous") {
-    redirect(`/admin/login?error=${state.reason}`);
+    redirect("/admin/login");
   }
 
   if (state.status === "not_admin") {
     await clearAdminSessionCookies();
-    redirect("/admin/login?error=not-authorized");
+    redirect("/admin/login");
   }
 
   if (state.status === "admin") {

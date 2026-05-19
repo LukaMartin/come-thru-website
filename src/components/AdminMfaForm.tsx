@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import {
   enrollMfaAction,
   verifyMfaAction,
@@ -26,6 +26,7 @@ function getQrCodeSrc(qrCode: string) {
 }
 
 export function AdminMfaForm({ initialFactorId }: AdminMfaFormProps) {
+  const [showManualSetupKey, setShowManualSetupKey] = useState(false);
   const [enrollState, enrollAction, isEnrolling] = useActionState(
     enrollMfaAction,
     enrollInitialState,
@@ -40,10 +41,6 @@ export function AdminMfaForm({ initialFactorId }: AdminMfaFormProps) {
     <div className="mt-8 grid gap-6">
       {!factorId ? (
         <form action={enrollAction} className="grid gap-4">
-          <p className="text-sm leading-6 text-[#f3eadb]/68">
-            Create a TOTP factor, scan the QR code with your authenticator app,
-            then verify the first code.
-          </p>
           {enrollState.error ? (
             <p className="text-sm text-red-300">{enrollState.error}</p>
           ) : null}
@@ -59,7 +56,7 @@ export function AdminMfaForm({ initialFactorId }: AdminMfaFormProps) {
 
       {enrollState.qrCode ? (
         <div className="grid gap-4 border border-[#f3eadb]/14 bg-black/25 p-4">
-          {/* The MFA QR code is a tiny Supabase-provided data URL, not a remote asset. */}
+          {/* The MFA QR code is a tiny server-generated data URL, not a remote asset. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={getQrCodeSrc(enrollState.qrCode)}
@@ -69,9 +66,22 @@ export function AdminMfaForm({ initialFactorId }: AdminMfaFormProps) {
             className="mx-auto size-52 bg-white p-3"
           />
           {enrollState.secret ? (
-            <p className="break-all text-center font-mono text-xs text-[#f3eadb]/68">
-              {enrollState.secret}
-            </p>
+            <div className="grid gap-3 text-center">
+              <button
+                type="button"
+                onClick={() => setShowManualSetupKey((current) => !current)}
+                className="mx-auto w-fit text-xs font-semibold uppercase tracking-[0.18em] text-[#d7c7ad] transition hover:text-[#f8f0e3]"
+              >
+                {showManualSetupKey
+                  ? "Hide manual setup key"
+                  : "Show manual setup key"}
+              </button>
+              {showManualSetupKey ? (
+                <p className="break-all font-mono text-xs text-[#f3eadb]/68">
+                  {enrollState.secret}
+                </p>
+              ) : null}
+            </div>
           ) : null}
         </div>
       ) : null}

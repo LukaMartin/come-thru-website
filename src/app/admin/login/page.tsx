@@ -5,25 +5,7 @@ export const metadata: Metadata = {
   title: "Admin Login | Come Thru",
 };
 
-const errorMessages: Record<string, string> = {
-  "missing-session-cookie": "Admin session cookies were not sent.",
-  "missing-access-token-cookie": "Admin access token cookie was not sent.",
-  "missing-refresh-token-cookie": "Admin refresh token cookie was not sent.",
-  "supabase-set-session-failed": "Supabase rejected the stored admin session.",
-  "supabase-get-user-failed": "Supabase could not load the admin user.",
-  "not-authorized": "This account is not authorized for admin access.",
-};
-
-type AdminLoginPageProps = {
-  searchParams: Promise<{ error?: string }>;
-};
-
-export default async function AdminLoginPage({
-  searchParams,
-}: AdminLoginPageProps) {
-  const { error } = await searchParams;
-  const errorMessage = error ? errorMessages[error] : null;
-
+export default function AdminLoginPage() {
   return (
     <main className="relative min-h-dvh overflow-hidden bg-[#070605] px-5 text-[#f8f0e3] sm:px-6">
       <div className="pointer-events-none fixed inset-0 z-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.045)_0_1px,transparent_1px_18px)]" />
@@ -41,14 +23,6 @@ export default async function AdminLoginPage({
               Use your approved admin account. MFA is required before event
               management unlocks.
             </p>
-            {errorMessage ? (
-              <p className="mt-4 border border-red-300/25 bg-red-950/30 p-3 text-sm text-red-200">
-                {errorMessage}
-                <span className="mt-2 block font-mono text-xs text-red-100/70">
-                  {error}
-                </span>
-              </p>
-            ) : null}
             <AdminLoginForm />
           </div>
         </div>

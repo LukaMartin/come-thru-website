@@ -29,7 +29,8 @@ export default async function AdminMfaPage() {
             </h1>
             <p className="mt-4 text-sm leading-6 text-[#f3eadb]/68">
               Admin actions require an authenticator app challenge for every
-              elevated session.
+              elevated session. Create a TOTP factor, scan the QR code with your
+              authenticator app, then verify the first code.
             </p>
             <AdminMfaForm initialFactorId={initialFactorId} />
           </div>
