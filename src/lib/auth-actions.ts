@@ -71,7 +71,12 @@ export async function enrollMfaAction(
       secret: data.totp.secret,
     };
   } catch (error) {
-    Sentry.captureException(error);
+    Sentry.captureException(error, {
+      tags: {
+        "admin.action": "mfa_enroll",
+        "app.area": "admin",
+      },
+    });
     return {
       error:
         error instanceof Error ? error.message : "Could not create MFA factor.",
@@ -112,7 +117,12 @@ export async function verifyMfaAction(
 
     await persistCurrentAuthSession(supabase);
   } catch (error) {
-    Sentry.captureException(error);
+    Sentry.captureException(error, {
+      tags: {
+        "admin.action": "mfa_verify",
+        "app.area": "admin",
+      },
+    });
     return {
       error:
         error instanceof Error ? error.message : "Could not verify MFA code.",

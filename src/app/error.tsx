@@ -13,7 +13,13 @@ type ErrorPageProps = {
 
 export default function ErrorPage({ error, reset }: ErrorPageProps) {
   useEffect(() => {
-    Sentry.captureException(error);
+    Sentry.captureException(error, {
+      tags: {
+        "app.area": "client",
+        "error.boundary": "app",
+        ...(error.digest ? { "error.digest": error.digest } : {}),
+      },
+    });
   }, [error]);
 
   return (

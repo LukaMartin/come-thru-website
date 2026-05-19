@@ -321,7 +321,16 @@ async function handleCheckoutCompleted(
             error instanceof Error ? error.message : "Ticket email failed.",
           );
         } catch (deliveryError) {
-          Sentry.captureException(deliveryError);
+          Sentry.captureException(deliveryError, {
+            tags: {
+              "app.area": "stripe_webhook",
+              "email.delivery_status": "failed",
+              "order.id": order.id,
+              "stripe.checkout_session_id": session.id,
+              "stripe.event_type": webhookEventType,
+              "stripe.webhook_event_id": webhookEventId,
+            },
+          });
         }
 
         throw error;

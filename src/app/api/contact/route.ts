@@ -43,7 +43,12 @@ export async function POST(request: Request) {
     await sendContactEmail(parsed.data);
     return Response.json({ ok: true });
   } catch (error) {
-    Sentry.captureException(error);
+    Sentry.captureException(error, {
+      tags: {
+        "app.area": "contact",
+        route: "/api/contact",
+      },
+    });
     return Response.json(
       { error: "Unable to send your message right now." },
       { status: 500 },

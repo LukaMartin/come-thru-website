@@ -132,12 +132,30 @@ function formToTicketTypeInput(formData: FormData) {
   });
 }
 
-function getActionError(error: unknown) {
+function getActionError(
+  error: unknown,
+  {
+    action,
+    eventId,
+    ticketTypeId,
+  }: {
+    action: string;
+    eventId?: string;
+    ticketTypeId?: string;
+  },
+) {
   if (error instanceof z.ZodError) {
     return error.issues[0]?.message ?? "Invalid form input.";
   }
 
-  Sentry.captureException(error);
+  Sentry.captureException(error, {
+    tags: {
+      "admin.action": action,
+      "app.area": "admin",
+      ...(eventId ? { "event.id": eventId } : {}),
+      ...(ticketTypeId ? { "ticket_type.id": ticketTypeId } : {}),
+    },
+  });
 
   return error instanceof Error ? error.message : "Something went wrong.";
 }
@@ -169,7 +187,9 @@ export async function createEventDraftAction(
     revalidatePath("/admin/events");
     newEventId = data.id;
   } catch (error) {
-    return { error: getActionError(error) };
+    return {
+      error: getActionError(error, { action: "event_create_draft" }),
+    };
   }
 
   redirect(`/admin/events/${newEventId}`);
@@ -201,7 +221,9 @@ export async function updateEventAction(
     revalidatePath(`/admin/events/${eventId}`);
     return { success: "Event updated." };
   } catch (error) {
-    return { error: getActionError(error) };
+    return {
+      error: getActionError(error, { action: "event_update", eventId }),
+    };
   }
 }
 
@@ -226,7 +248,9 @@ export async function createTicketTypeAction(
     revalidatePath(`/admin/events/${eventId}`);
     return { success: "Ticket type created." };
   } catch (error) {
-    return { error: getActionError(error) };
+    return {
+      error: getActionError(error, { action: "ticket_type_create", eventId }),
+    };
   }
 }
 
@@ -254,7 +278,13 @@ export async function updateTicketTypeAction(
     revalidatePath(`/admin/events/${eventId}`);
     return { success: "Ticket type updated." };
   } catch (error) {
-    return { error: getActionError(error) };
+    return {
+      error: getActionError(error, {
+        action: "ticket_type_update",
+        eventId,
+        ticketTypeId,
+      }),
+    };
   }
 }
 
