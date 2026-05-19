@@ -6,6 +6,13 @@ const adminRefreshTokenCookie = "admin_sb_refresh_token";
 const refreshLeewaySeconds = 60;
 const refreshTokenMaxAge = 60 * 60 * 24 * 1;
 
+function decodeBase64Url(value: string) {
+  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+  const padding = (4 - (normalized.length % 4)) % 4;
+
+  return atob(normalized.padEnd(normalized.length + padding, "="));
+}
+
 function getJwtExp(token: string) {
   try {
     const payload = token.split(".")[1];
@@ -14,8 +21,7 @@ function getJwtExp(token: string) {
       return null;
     }
 
-    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
-    const decoded = JSON.parse(atob(normalized)) as { exp?: number };
+    const decoded = JSON.parse(decodeBase64Url(payload)) as { exp?: number };
 
     return typeof decoded.exp === "number" ? decoded.exp : null;
   } catch {
@@ -61,8 +67,6 @@ export async function middleware(request: NextRequest) {
   );
 
   if (!tokenResponse.ok) {
-    response.cookies.delete(adminAccessTokenCookie);
-    response.cookies.delete(adminRefreshTokenCookie);
     return response;
   }
 
