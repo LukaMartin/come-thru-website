@@ -2,6 +2,7 @@
 
 import { put } from "@vercel/blob";
 import { revalidatePath } from "next/cache";
+import sharp from "sharp";
 import { z } from "zod";
 import * as Sentry from "@sentry/nextjs";
 import { createSessionAuthClient, requireAdmin } from "@/lib/admin-auth";
@@ -12,7 +13,8 @@ export type AdminGalleryMutationState = {
   success?: string;
 };
 
-const maxImageSize = 8 * 1024 * 1024;
+const maxSourceImageSize = 12 * 1024 * 1024;
+const webpQuality = 90;
 const acceptedImageTypes = new Set([
   "image/jpeg",
   "image/png",
@@ -37,6 +39,14 @@ function safeFilename(filename: string) {
     .replace(/[^a-z0-9.]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 80);
+}
+
+function filenameWithoutExtension(filename: string) {
+  return filename.replace(/\.[^.]+$/, "");
+}
+
+function getSlotImageWidth(slot: number) {
+  return slot === 1 ? 2000 : 1400;
 }
 
 function getGalleryActionError(error: unknown) {
@@ -76,16 +86,30 @@ export async function updateGalleryImageAction(
         return { error: "Upload a JPG, PNG, WebP, or GIF image." };
       }
 
-      if (upload.size > maxImageSize) {
-        return { error: "Keep gallery images under 8MB." };
+      if (upload.size > maxSourceImageSize) {
+        return { error: "Keep source gallery images under 12MB." };
       }
 
-      const filename = safeFilename(upload.name) || `slot-${input.slot}.jpg`;
+      const filename =
+        filenameWithoutExtension(safeFilename(upload.name)) ||
+        `slot-${input.slot}`;
+      const optimizedImage = await sharp(
+        Buffer.from(await upload.arrayBuffer()),
+      )
+        .rotate()
+        .resize({
+          width: getSlotImageWidth(input.slot),
+          withoutEnlargement: true,
+        })
+        .webp({ quality: webpQuality })
+        .toBuffer();
+
       const blob = await put(
-        `gallery/slot-${input.slot}/${Date.now()}-${filename}`,
-        upload,
+        `gallery/slot-${input.slot}/${Date.now()}-${filename}.webp`,
+        optimizedImage,
         {
           access: "public",
+          contentType: "image/webp",
           token: requireEnv("BLOB_READ_WRITE_TOKEN"),
         },
       );
@@ -124,4 +148,3 @@ export async function updateGalleryImageAction(
     };
   }
 }
-
