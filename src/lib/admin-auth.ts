@@ -12,7 +12,13 @@ import {
 import { createAuthClient, createServiceClient } from "@/lib/supabase/server";
 
 export type AdminAuthState =
-  | { status: "anonymous" }
+  | {
+      status: "anonymous";
+      reason:
+        | "missing-session-cookie"
+        | "supabase-set-session-failed"
+        | "supabase-get-user-failed";
+    }
   | { status: "not_admin"; user: User }
   | { status: "needs_mfa"; user: User }
   | { status: "admin"; user: User };
@@ -68,7 +74,7 @@ export async function getAdminAuthState(): Promise<AdminAuthState> {
   const session = await getStoredAdminSession();
 
   if (!session) {
-    return { status: "anonymous" };
+    return { status: "anonymous", reason: "missing-session-cookie" };
   }
 
   const supabase = createAuthClient();
@@ -79,13 +85,13 @@ export async function getAdminAuthState(): Promise<AdminAuthState> {
     });
 
   if (sessionError || !sessionData.session) {
-    return { status: "anonymous" };
+    return { status: "anonymous", reason: "supabase-set-session-failed" };
   }
 
   const { data, error } = await supabase.auth.getUser();
 
   if (error || !data.user) {
-    return { status: "anonymous" };
+    return { status: "anonymous", reason: "supabase-get-user-failed" };
   }
 
   const isAdmin = await isApprovedAdmin(data.user.id);
@@ -109,7 +115,7 @@ export async function requireAdmin() {
   const state = await getAdminAuthState();
 
   if (state.status === "anonymous") {
-    redirect("/admin/login");
+    redirect(`/admin/login?error=${state.reason}`);
   }
 
   if (state.status === "needs_mfa") {
@@ -127,7 +133,7 @@ export async function requireAdminForMfa() {
   const state = await getAdminAuthState();
 
   if (state.status === "anonymous") {
-    redirect("/admin/login");
+    redirect(`/admin/login?error=${state.reason}`);
   }
 
   if (state.status === "not_admin") {
