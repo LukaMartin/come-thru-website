@@ -131,6 +131,7 @@ create or replace function public.ticketing_redeem_ticket(
 returns table (
   result text,
   ticket_id uuid,
+  ticket_number text,
   event_id uuid,
   ticket_type_id uuid,
   attendee_email text,
@@ -161,6 +162,7 @@ begin
 
     result := 'valid';
     ticket_id := redeemed_ticket.id;
+    ticket_number := redeemed_ticket.ticket_number;
     event_id := redeemed_ticket.event_id;
     ticket_type_id := redeemed_ticket.ticket_type_id;
     attendee_email := redeemed_ticket.attendee_email;
@@ -202,6 +204,7 @@ begin
   end if;
 
   ticket_id := existing_ticket.id;
+  ticket_number := existing_ticket.ticket_number;
   event_id := existing_ticket.event_id;
   ticket_type_id := existing_ticket.ticket_type_id;
   attendee_email := existing_ticket.attendee_email;

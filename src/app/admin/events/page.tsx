@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { createSessionAuthClient, requireAdmin } from "@/lib/admin-auth";
+import { logoutAdminAction } from "@/lib/auth-actions";
 import type { Database } from "@/lib/database.types";
 import { formatEventDateRange } from "@/lib/tickets";
 
@@ -67,12 +68,14 @@ export default async function AdminEventsPage() {
             >
               New event
             </Link>
-            <Link
-              href="/admin/logout"
-              className="rounded-full border border-[#f3eadb]/18 px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-[#f8f0e3] transition hover:bg-[#f3eadb]/10"
-            >
-              Log out
-            </Link>
+            <form action={logoutAdminAction}>
+              <button
+                type="submit"
+                className="rounded-full border border-[#f3eadb]/18 px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-[#f8f0e3] transition hover:bg-[#f3eadb]/10"
+              >
+                Log out
+              </button>
+            </form>
           </div>
         </header>
 

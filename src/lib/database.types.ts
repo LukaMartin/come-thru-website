@@ -309,6 +309,7 @@ export type Database = {
         Returns: {
           result: string;
           ticket_id: string | null;
+          ticket_number: string | null;
           event_id: string | null;
           ticket_type_id: string | null;
           attendee_email: string | null;
