@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { cookies, headers } from "next/headers";
 import {
   adminAccessTokenCookie,
@@ -18,6 +19,7 @@ export default async function AdminDebugPage() {
   const hasRefreshToken = Boolean(
     cookieStore.get(adminRefreshTokenCookie)?.value,
   );
+  const hasDebugCookie = Boolean(cookieStore.get("admin_debug_cookie")?.value);
 
   return (
     <main className="min-h-dvh bg-[#070605] p-6 text-[#f8f0e3]">
@@ -28,10 +30,17 @@ export default async function AdminDebugPage() {
         <div className="grid gap-2 font-mono text-sm">
           <p>access cookie: {hasAccessToken ? "present" : "missing"}</p>
           <p>refresh cookie: {hasRefreshToken ? "present" : "missing"}</p>
+          <p>debug cookie: {hasDebugCookie ? "present" : "missing"}</p>
           <p>host: {headerStore.get("host") ?? "unknown"}</p>
           <p>protocol: {headerStore.get("x-forwarded-proto") ?? "unknown"}</p>
           <p>path: /admin/debug</p>
         </div>
+        <Link
+          href="/admin/debug/set-cookie"
+          className="w-fit rounded-full border border-[#f3eadb]/18 px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-[#f8f0e3]"
+        >
+          Set debug cookie
+        </Link>
       </section>
     </main>
   );
