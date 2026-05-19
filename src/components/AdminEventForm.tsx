@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import type { AdminMutationState } from "@/app/admin/events/actions";
+import type { AdminMutationState } from "@/lib/admin-events-actions";
 import type { Database } from "@/lib/database.types";
 
 type EventRow = Database["public"]["Tables"]["ticketing_events"]["Row"];

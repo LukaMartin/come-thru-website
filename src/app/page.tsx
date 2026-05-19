@@ -7,7 +7,7 @@ import { Header } from "@/components/Header";
 import { getCurrentEvent } from "@/lib/events";
 import { socialLinks } from "@/lib/site";
 import { formatEventDateRange } from "@/lib/tickets";
-import { galleryImages } from "@/lib/gallery";
+import { getGalleryImages } from "@/lib/gallery";
 
 export const metadata: Metadata = {
   title: "Come Thru | Sydney/Eora Dance Music Events",
@@ -26,7 +26,10 @@ const metaLabelClass =
 const metaValueClass = "mt-2 text-base font-medium text-[#f8f0e3]";
 
 export default async function Home() {
-  const event = await getCurrentEvent();
+  const [event, galleryImages] = await Promise.all([
+    getCurrentEvent(),
+    getGalleryImages(),
+  ]);
 
   if (!event) {
     throw new Error("No current event found.");
@@ -143,7 +146,7 @@ export default async function Home() {
           </div>
 
           <div className="grid gap-2 md:grid-cols-4 md:gap-3">
-            {galleryImages.map((image) => (
+            {galleryImages.map((image, index) => (
               <div
                 key={image.src}
                 className={`group relative min-h-60 overflow-hidden border border-[#f3eadb]/12 bg-[#11100d] ${image.className}`}
@@ -152,6 +155,7 @@ export default async function Home() {
                   src={image.src}
                   alt={image.alt}
                   fill
+                  loading={index === 0 ? "eager" : "lazy"}
                   sizes="(min-width: 1024px) 550px, (min-width: 640px) 50vw, 100vw"
                   className="object-cover opacity-80 saturate-[0.78] transition duration-500 group-hover:scale-[1.03] group-hover:opacity-100 group-hover:saturate-100"
                   unoptimized

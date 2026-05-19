@@ -225,6 +225,29 @@ export type Database = {
         };
         Update: Partial<Database["public"]["Tables"]["admin_users"]["Insert"]>;
       };
+      site_gallery_images: {
+        Row: {
+          id: string;
+          slot: number;
+          image_url: string;
+          alt: string;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          slot: number;
+          image_url: string;
+          alt?: string;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["site_gallery_images"]["Insert"]
+        >;
+      };
     };
     Functions: {
       ticketing_fulfill_checkout_session: {

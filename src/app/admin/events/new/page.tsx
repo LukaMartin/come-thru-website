@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { createEventDraftAction } from "@/app/admin/events/actions";
+import { createEventDraftAction } from "@/lib/admin-events-actions";
 import { AdminEventForm } from "@/components/AdminEventForm";
 import { requireAdmin } from "@/lib/admin-auth";
 

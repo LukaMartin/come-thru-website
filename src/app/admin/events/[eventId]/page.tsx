@@ -7,7 +7,7 @@ import {
   publishCurrentEventAction,
   updateEventAction,
   updateTicketTypeAction,
-} from "@/app/admin/events/actions";
+} from "@/lib/admin-events-actions";
 import { AdminEventForm } from "@/components/AdminEventForm";
 import { AdminTicketTypeForm } from "@/components/AdminTicketTypeForm";
 import { createSessionAuthClient, requireAdmin } from "@/lib/admin-auth";
