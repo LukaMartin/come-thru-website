@@ -7,6 +7,7 @@ import {
   clearAdminSessionCookies,
   getJwtPayload,
   getStoredAdminSession,
+  getStoredAdminSessionCookieState,
   setAdminSessionCookies,
 } from "@/lib/admin-session";
 import { createAuthClient, createServiceClient } from "@/lib/supabase/server";
@@ -16,6 +17,8 @@ export type AdminAuthState =
       status: "anonymous";
       reason:
         | "missing-session-cookie"
+        | "missing-access-token-cookie"
+        | "missing-refresh-token-cookie"
         | "supabase-set-session-failed"
         | "supabase-get-user-failed";
     }
@@ -71,12 +74,13 @@ async function isApprovedAdmin(userId: string) {
 }
 
 export async function getAdminAuthState(): Promise<AdminAuthState> {
-  const session = await getStoredAdminSession();
+  const cookieState = await getStoredAdminSessionCookieState();
 
-  if (!session) {
-    return { status: "anonymous", reason: "missing-session-cookie" };
+  if (cookieState.status === "missing") {
+    return { status: "anonymous", reason: cookieState.reason };
   }
 
+  const { session } = cookieState;
   const supabase = createAuthClient();
   const { data: sessionData, error: sessionError } =
     await supabase.auth.setSession({

@@ -13,6 +13,16 @@ type StoredAdminSession = {
   refreshToken: string;
 };
 
+export type StoredAdminSessionCookieState =
+  | { status: "present"; session: StoredAdminSession }
+  | {
+      status: "missing";
+      reason:
+        | "missing-session-cookie"
+        | "missing-access-token-cookie"
+        | "missing-refresh-token-cookie";
+    };
+
 const cookieOptions = {
   httpOnly: true,
   path: "/",
@@ -20,16 +30,37 @@ const cookieOptions = {
   secure: process.env.NODE_ENV === "production",
 };
 
-export async function getStoredAdminSession() {
+export async function getStoredAdminSessionCookieState(): Promise<StoredAdminSessionCookieState> {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get(adminAccessTokenCookie)?.value;
   const refreshToken = cookieStore.get(adminRefreshTokenCookie)?.value;
 
-  if (!accessToken || !refreshToken) {
+  if (!accessToken && !refreshToken) {
+    return { status: "missing", reason: "missing-session-cookie" };
+  }
+
+  if (!accessToken) {
+    return { status: "missing", reason: "missing-access-token-cookie" };
+  }
+
+  if (!refreshToken) {
+    return { status: "missing", reason: "missing-refresh-token-cookie" };
+  }
+
+  return {
+    status: "present",
+    session: { accessToken, refreshToken } satisfies StoredAdminSession,
+  };
+}
+
+export async function getStoredAdminSession() {
+  const cookieState = await getStoredAdminSessionCookieState();
+
+  if (cookieState.status === "missing") {
     return null;
   }
 
-  return { accessToken, refreshToken } satisfies StoredAdminSession;
+  return cookieState.session;
 }
 
 export async function setAdminSessionCookies(session: Session) {

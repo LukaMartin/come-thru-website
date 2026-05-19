@@ -7,6 +7,8 @@ export const metadata: Metadata = {
 
 const errorMessages: Record<string, string> = {
   "missing-session-cookie": "Admin session cookies were not sent.",
+  "missing-access-token-cookie": "Admin access token cookie was not sent.",
+  "missing-refresh-token-cookie": "Admin refresh token cookie was not sent.",
   "supabase-set-session-failed": "Supabase rejected the stored admin session.",
   "supabase-get-user-failed": "Supabase could not load the admin user.",
   "not-authorized": "This account is not authorized for admin access.",
@@ -42,6 +44,9 @@ export default async function AdminLoginPage({
             {errorMessage ? (
               <p className="mt-4 border border-red-300/25 bg-red-950/30 p-3 text-sm text-red-200">
                 {errorMessage}
+                <span className="mt-2 block font-mono text-xs text-red-100/70">
+                  {error}
+                </span>
               </p>
             ) : null}
             <AdminLoginForm />
