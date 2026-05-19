@@ -37,32 +37,42 @@ function isPrefetchRequest(request: NextRequest) {
   );
 }
 
+function setRequestCookieHeader(headers: Headers, name: string, value: string) {
+  const cookies = (headers.get("cookie") ?? "")
+    .split(";")
+    .map((cookie) => cookie.trim())
+    .filter((cookie) => cookie && !cookie.startsWith(`${name}=`));
+
+  cookies.push(`${name}=${value}`);
+  headers.set("cookie", cookies.join("; "));
+}
+
 export async function middleware(request: NextRequest) {
-  const response = NextResponse.next();
   const accessToken = request.cookies.get(adminAccessTokenCookie)?.value;
   const refreshToken = request.cookies.get(adminRefreshTokenCookie)?.value;
 
   if (!refreshToken) {
-    return response;
+    return NextResponse.next();
   }
 
   if (isPrefetchRequest(request)) {
-    return response;
+    return NextResponse.next();
   }
 
   const expiresAt = accessToken ? getJwtExp(accessToken) : null;
   const shouldRefresh =
-    !expiresAt || expiresAt - Math.floor(Date.now() / 1000) <= refreshLeewaySeconds;
+    !expiresAt ||
+    expiresAt - Math.floor(Date.now() / 1000) <= refreshLeewaySeconds;
 
   if (!shouldRefresh) {
-    return response;
+    return NextResponse.next();
   }
 
   const supabaseUrl = process.env.SUPABASE_URL;
   const anonKey = process.env.SUPABASE_AUTH_ANON_KEY;
 
   if (!supabaseUrl || !anonKey) {
-    return response;
+    return NextResponse.next();
   }
 
   const tokenResponse = await fetch(
@@ -79,7 +89,7 @@ export async function middleware(request: NextRequest) {
 
   if (!tokenResponse.ok) {
     // Refresh tokens rotate; a concurrent request may have already replaced this one.
-    return response;
+    return NextResponse.next();
   }
 
   const payload = (await tokenResponse.json()) as {
@@ -89,8 +99,26 @@ export async function middleware(request: NextRequest) {
   };
 
   if (!payload.access_token || !payload.refresh_token) {
-    return response;
+    return NextResponse.next();
   }
+
+  const requestHeaders = new Headers(request.headers);
+  setRequestCookieHeader(
+    requestHeaders,
+    adminAccessTokenCookie,
+    payload.access_token,
+  );
+  setRequestCookieHeader(
+    requestHeaders,
+    adminRefreshTokenCookie,
+    payload.refresh_token,
+  );
+
+  const response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
 
   const cookieOptions = {
     httpOnly: true,
