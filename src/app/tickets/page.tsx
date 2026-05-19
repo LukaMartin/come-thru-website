@@ -85,7 +85,7 @@ export default async function TicketsPage() {
               tickets={tickets}
             />
 
-            <div className="-order-1 relative overflow-hidden border border-[#f3eadb]/14 bg-[radial-gradient(circle_at_18%_18%,rgba(172,67,43,0.32),transparent_34%),radial-gradient(circle_at_82%_22%,rgba(215,199,173,0.14),transparent_28%),radial-gradient(circle_at_68%_82%,rgba(242,171,82,0.14),transparent_30%),radial-gradient(circle_at_28%_76%,rgba(172,67,43,0.18),transparent_28%),rgba(13,9,8,0.94)] p-5 shadow-2xl shadow-black/30 md:p-8 lg:order-0 lg:border small-laptop:p-4.5">
+            <div className="-order-1 relative overflow-hidden border-y border-[#f3eadb]/14 bg-[radial-gradient(circle_at_18%_18%,rgba(172,67,43,0.32),transparent_34%),radial-gradient(circle_at_82%_22%,rgba(215,199,173,0.14),transparent_28%),radial-gradient(circle_at_68%_82%,rgba(242,171,82,0.14),transparent_30%),radial-gradient(circle_at_28%_76%,rgba(172,67,43,0.18),transparent_28%),rgba(13,9,8,0.94)] p-5 shadow-2xl shadow-black/30 md:p-8 lg:order-0 lg:border small-laptop:p-4.5">
               <div className="pointer-events-none absolute -left-16 top-16 h-52 w-52 rounded-full bg-[#b5482f]/22 blur-3xl" />
               <div className="pointer-events-none absolute -right-12 top-12 h-44 w-44 rounded-full bg-[#d7c7ad]/14 blur-3xl" />
               <div className="pointer-events-none absolute right-20 bottom-8 h-48 w-48 rounded-full bg-[#f2ab52]/14 blur-3xl" />
