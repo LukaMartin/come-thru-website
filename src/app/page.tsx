@@ -146,7 +146,7 @@ export default async function Home() {
           </div>
 
           <div className="grid gap-2 md:grid-cols-4 md:gap-3">
-            {galleryImages.map((image, index) => (
+            {galleryImages.map((image) => (
               <div
                 key={image.src}
                 className={`group relative min-h-60 overflow-hidden border border-[#f3eadb]/12 bg-[#11100d] ${image.className}`}
