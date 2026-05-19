@@ -7,6 +7,7 @@ import {
   signInAdmin,
   signOutAdmin,
 } from "@/lib/admin-auth";
+import * as Sentry from "@sentry/nextjs";
 
 export type LoginFormState = {
   error?: string;
@@ -70,6 +71,7 @@ export async function enrollMfaAction(
       secret: data.totp.secret,
     };
   } catch (error) {
+    Sentry.captureException(error);
     return {
       error:
         error instanceof Error ? error.message : "Could not create MFA factor.",
@@ -110,6 +112,7 @@ export async function verifyMfaAction(
 
     await persistCurrentAuthSession(supabase);
   } catch (error) {
+    Sentry.captureException(error);
     return {
       error:
         error instanceof Error ? error.message : "Could not verify MFA code.",

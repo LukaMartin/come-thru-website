@@ -97,7 +97,7 @@ export async function POST(request: Request) {
 
     if ((startsAt && now < startsAt) || (endsAt && now > endsAt)) {
       return Response.json(
-        { error: `${ticketType.name} is not on sale right now.` },
+        { error: `${ticketType.name} is not on sale.` },
         { status: 400 },
       );
     }

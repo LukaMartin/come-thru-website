@@ -11,6 +11,7 @@ import {
   getTicketUrl,
   hashTicketSecret,
 } from "@/lib/tickets";
+import * as Sentry from "@sentry/nextjs";
 
 export const dynamic = "force-dynamic";
 
@@ -320,10 +321,7 @@ async function handleCheckoutCompleted(
             error instanceof Error ? error.message : "Ticket email failed.",
           );
         } catch (deliveryError) {
-          console.error(
-            "Failed to record ticket email failure.",
-            deliveryError,
-          );
+          Sentry.captureException(deliveryError);
         }
 
         throw error;

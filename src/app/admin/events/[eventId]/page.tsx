@@ -135,7 +135,7 @@ export default async function AdminEventPage({ params }: AdminEventPageProps) {
             <p className="text-[0.68rem] uppercase tracking-[0.45em] text-[#d7c7ad]">
               Tickets
             </p>
-            <h2 className="mt-3 text-3xl font-black uppercase leading-none tracking-[-0.05em]">
+            <h2 className="mt-3 text-3xl font-black uppercase leading-none tracking-tighter">
               Ticket types
             </h2>
           </div>

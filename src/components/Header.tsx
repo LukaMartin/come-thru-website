@@ -3,8 +3,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import logoStacked from "../../public/logo-stacked.png";
-import logoHorizontal from "../../public/logo.png";
 import logoCream from "../../public/logo-cream.png";
 
 const navLinks = [

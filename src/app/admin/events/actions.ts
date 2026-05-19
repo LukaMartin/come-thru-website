@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createSessionAuthClient, requireAdmin } from "@/lib/admin-auth";
+import * as Sentry from "@sentry/nextjs";
 
 export type AdminMutationState = {
   error?: string;
@@ -135,6 +136,8 @@ function getActionError(error: unknown) {
   if (error instanceof z.ZodError) {
     return error.issues[0]?.message ?? "Invalid form input.";
   }
+
+  Sentry.captureException(error);
 
   return error instanceof Error ? error.message : "Something went wrong.";
 }

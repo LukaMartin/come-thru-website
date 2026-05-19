@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { sendContactEmail } from "@/lib/email";
+import * as Sentry from "@sentry/nextjs";
 
 export const dynamic = "force-dynamic";
 
@@ -7,7 +8,11 @@ const contactSchema = z.object({
   name: z.string().trim().min(1, "Name is required.").max(120),
   email: z.string().trim().email("Enter a valid email address.").max(254),
   subject: z.string().trim().min(1, "Subject is required.").max(160),
-  message: z.string().trim().min(10, "Message must be at least 10 characters.").max(2000),
+  message: z
+    .string()
+    .trim()
+    .min(10, "Message must be at least 10 characters.")
+    .max(2000),
 });
 
 export async function POST(request: Request) {
@@ -16,7 +21,10 @@ export async function POST(request: Request) {
   try {
     body = await request.json();
   } catch {
-    return Response.json({ error: "Invalid contact request." }, { status: 400 });
+    return Response.json(
+      { error: "Invalid contact request." },
+      { status: 400 },
+    );
   }
 
   const parsed = contactSchema.safeParse(body);
@@ -35,7 +43,7 @@ export async function POST(request: Request) {
     await sendContactEmail(parsed.data);
     return Response.json({ ok: true });
   } catch (error) {
-    console.error("Contact form failed", error);
+    Sentry.captureException(error);
     return Response.json(
       { error: "Unable to send your message right now." },
       { status: 500 },
