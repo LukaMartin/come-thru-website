@@ -6,6 +6,13 @@ const adminRefreshTokenCookie = "admin_sb_refresh_token";
 const refreshLeewaySeconds = 60;
 const refreshTokenMaxAge = 60 * 60 * 24 * 1;
 
+function decodeBase64Url(value: string) {
+  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+  const padding = (4 - (normalized.length % 4)) % 4;
+
+  return atob(normalized.padEnd(normalized.length + padding, "="));
+}
+
 function getJwtExp(token: string) {
   try {
     const payload = token.split(".")[1];
@@ -14,13 +21,20 @@ function getJwtExp(token: string) {
       return null;
     }
 
-    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
-    const decoded = JSON.parse(atob(normalized)) as { exp?: number };
+    const decoded = JSON.parse(decodeBase64Url(payload)) as { exp?: number };
 
     return typeof decoded.exp === "number" ? decoded.exp : null;
   } catch {
     return null;
   }
+}
+
+function isPrefetchRequest(request: NextRequest) {
+  return (
+    request.headers.get("next-router-prefetch") === "1" ||
+    request.headers.get("purpose") === "prefetch" ||
+    request.headers.get("sec-purpose") === "prefetch"
+  );
 }
 
 export async function middleware(request: NextRequest) {
@@ -29,6 +43,10 @@ export async function middleware(request: NextRequest) {
   const refreshToken = request.cookies.get(adminRefreshTokenCookie)?.value;
 
   if (!refreshToken) {
+    return response;
+  }
+
+  if (isPrefetchRequest(request)) {
     return response;
   }
 
