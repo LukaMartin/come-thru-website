@@ -93,7 +93,7 @@ export function ContactForm() {
             setStatus("idle");
             setError(null);
           }}
-          className="mt-7 rounded-full border border-[#f3eadb]/18 px-6 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-[#f8f0e3] transition duration-300 hover:border-[#d7c7ad]/55 hover:bg-[#f3eadb]/8"
+          className="mt-7 rounded-md border border-[#f3eadb]/18 px-6 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-[#f8f0e3] transition duration-300 hover:border-[#d7c7ad]/55 hover:bg-[#f3eadb]/8"
         >
           Send another request
         </button>

@@ -6,9 +6,11 @@ import {
   createTicketTypeAction,
   publishCurrentEventAction,
   updateEventAction,
+  updateLineupArtistsAction,
   updateTicketTypeAction,
 } from "@/lib/admin-events-actions";
 import { AdminEventForm } from "@/components/AdminEventForm";
+import { AdminLineupArtistsForm } from "@/components/AdminLineupArtistsForm";
 import { AdminTicketTypeForm } from "@/components/AdminTicketTypeForm";
 import { createSessionAuthClient, requireAdmin } from "@/lib/admin-auth";
 import type { Database } from "@/lib/database.types";
@@ -17,6 +19,7 @@ import { formatEventDateRange } from "@/lib/tickets";
 type EventRow = Database["public"]["Tables"]["ticketing_events"]["Row"];
 type TicketTypeRow =
   Database["public"]["Tables"]["ticketing_ticket_types"]["Row"];
+type LineupArtistRow = Database["public"]["Tables"]["lineup_artists"]["Row"];
 
 type AdminEventPageProps = {
   params: Promise<{ eventId: string }>;
@@ -62,7 +65,20 @@ export default async function AdminEventPage({ params }: AdminEventPageProps) {
 
   const ticketTypes = (ticketTypeData ?? []) as TicketTypeRow[];
   const updateEvent = updateEventAction.bind(null, event.id);
+  const updateLineupArtists = updateLineupArtistsAction.bind(null, event.id);
   const createTicketType = createTicketTypeAction.bind(null, event.id);
+
+  const { data: lineupArtistData, error: lineupArtistsError } = await supabase
+    .from("lineup_artists")
+    .select("*")
+    .eq("event_id", event.id)
+    .order("slot", { ascending: true });
+
+  if (lineupArtistsError) {
+    throw lineupArtistsError;
+  }
+
+  const lineupArtists = (lineupArtistData ?? []) as LineupArtistRow[];
 
   return (
     <main className="relative min-h-dvh overflow-hidden bg-[#070605] px-5 py-8 text-[#f8f0e3] sm:px-6">
@@ -127,6 +143,21 @@ export default async function AdminEventPage({ params }: AdminEventPageProps) {
               Event details
             </h2>
             <AdminEventForm action={updateEvent} event={event} mode="edit" />
+          </div>
+        </section>
+
+        <section className="grid gap-4">
+          <div className="border border-[#f3eadb]/14 bg-[#080706] p-5 md:p-6">
+            <h2 className="mb-2 text-2xl font-black uppercase tracking-[-0.04em]">
+              Lineup artists
+            </h2>
+            <p className="mb-5 text-sm leading-6 text-[#f3eadb]/58">
+              These appear in the Listen section on the tickets page.
+            </p>
+            <AdminLineupArtistsForm
+              action={updateLineupArtists}
+              lineupArtists={lineupArtists}
+            />
           </div>
         </section>
 

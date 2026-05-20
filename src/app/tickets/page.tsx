@@ -1,10 +1,16 @@
 import Image from "next/image";
+import type { CSSProperties } from "react";
 import { FaSoundcloud } from "react-icons/fa";
 
 import { CheckoutPanel } from "@/components/CheckoutPanel";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
-import { getCurrentEvent, getTicketCountsByType } from "@/lib/events";
+import {
+  getCurrentEvent,
+  getLineupArtistsByEventId,
+  getTicketCountsByType,
+  type LineupArtist,
+} from "@/lib/events";
 import { formatEventDateRange } from "@/lib/tickets";
 
 export const dynamic = "force-dynamic";
@@ -20,29 +26,33 @@ const moreInfoItems = [
   "Come Thru is built around respect, consent, and care for the people around you. We have a zero tolerance for negative behaviour, harassment, discrimination, or intimidation. Please be considerate of others at all times, and look out for one another.",
 ] as const;
 
-const lineupArtists = [
-  {
-    name: "Come Thru",
-    soundcloudUrl: "https://on.soundcloud.com/SPwPfXPEVyZyq3zWuC",
-  },
-  { name: "ROOF", soundcloudUrl: null },
-  {
-    name: "Penny",
-    soundcloudUrl: "https://on.soundcloud.com/RlRbhj1YFU3Yeq7KYH",
-  },
-  { name: "Garydose", soundcloudUrl: null },
-  { name: "Westconnex", soundcloudUrl: null },
-  {
-    name: "Luka Brasi",
-    soundcloudUrl: "https://on.soundcloud.com/honV7FH0u4JclC5W2S",
-  },
-] as const;
-
-function getSoundCloudUrl(artist: (typeof lineupArtists)[number]) {
+function getSoundCloudUrl(artist: LineupArtist) {
   return (
-    artist.soundcloudUrl ??
+    artist.soundcloud_url ??
     `https://soundcloud.com/search?q=${encodeURIComponent(artist.name)}`
   );
+}
+
+type LineupArtistGridStyle = CSSProperties & {
+  "--lineup-mobile-span": number;
+  "--lineup-desktop-span": number;
+};
+
+function getLineupArtistGridStyle(
+  artistCount: number,
+  artistIndex: number,
+): LineupArtistGridStyle {
+  const artistSpans =
+    artistCount === 5 && artistIndex >= 2
+      ? { mobile: 2, desktop: 2 }
+      : artistCount === 6
+        ? { mobile: 3, desktop: 2 }
+        : { mobile: 3, desktop: 3 };
+
+  return {
+    "--lineup-mobile-span": artistSpans.mobile,
+    "--lineup-desktop-span": artistSpans.desktop,
+  };
 }
 
 export default async function TicketsPage({ searchParams }: TicketsPageProps) {
@@ -57,9 +67,10 @@ export default async function TicketsPage({ searchParams }: TicketsPageProps) {
   }
 
   const ticketTypes = event.ticketing_ticket_types ?? [];
-  const soldCounts = await getTicketCountsByType(
-    ticketTypes.map((ticket) => ticket.id),
-  );
+  const [soldCounts, lineupArtists] = await Promise.all([
+    getTicketCountsByType(ticketTypes.map((ticket) => ticket.id)),
+    getLineupArtistsByEventId(event.id),
+  ]);
   const tickets = ticketTypes.map((ticket) => ({
     ...ticket,
     sold:
@@ -163,35 +174,43 @@ export default async function TicketsPage({ searchParams }: TicketsPageProps) {
             </div>
           </div>
 
-          <div className="order-3 relative overflow-hidden border border-[#f3eadb]/14 bg-[linear-gradient(180deg,rgba(255,119,0,0.06),transparent_46%),rgba(8,7,6,0.96)] p-5 shadow-2xl shadow-black/30 small-laptop:p-4.5 md:p-6 lg:col-start-2 lg:row-start-3">
-            <div className="pointer-events-none absolute right-8 top-0 h-px w-28 bg-linear-to-r from-transparent via-[#ff7700]/45 to-transparent" />
-            <div className="pointer-events-none absolute bottom-0 left-8 h-px w-28 bg-linear-to-r from-transparent via-[#ff7700]/48 to-transparent" />
-            <div className="pointer-events-none absolute -right-10 top-8 h-28 w-28 rounded-full bg-[#ff7700]/10 blur-2xl" />
+          {lineupArtists.length > 0 ? (
+            <div className="order-3 relative overflow-hidden border border-[#f3eadb]/14 bg-[linear-gradient(180deg,rgba(255,119,0,0.06),transparent_46%),rgba(8,7,6,0.96)] p-5 shadow-2xl shadow-black/30 small-laptop:p-4.5 md:p-6 lg:col-start-2 lg:row-start-3">
+              <div className="pointer-events-none absolute right-8 top-0 h-px w-28 bg-linear-to-r from-transparent via-[#ff7700]/45 to-transparent" />
+              <div className="pointer-events-none absolute bottom-0 left-8 h-px w-28 bg-linear-to-r from-transparent via-[#ff7700]/48 to-transparent" />
+              <div className="pointer-events-none absolute -right-10 top-8 h-28 w-28 rounded-full bg-[#ff7700]/10 blur-2xl" />
 
-            <div className="relative flex items-center justify-between gap-5 border-b border-[#f3eadb]/10 pb-4">
-              <p className="text-[0.68rem] uppercase tracking-[0.45em] text-[#d7c7ad]">
-                Listen
-              </p>
-              <FaSoundcloud
-                aria-label="SoundCloud"
-                className="text-[#ff7700] text-3xl md:text-4xl"
-              />
-            </div>
+              <div className="relative flex items-center justify-between gap-5 border-b border-[#f3eadb]/10 pb-4">
+                <p className="text-[0.68rem] uppercase tracking-[0.45em] text-[#d7c7ad]">
+                  Listen
+                </p>
+                <FaSoundcloud
+                  aria-label="SoundCloud"
+                  className="text-[#ff7700] text-3xl md:text-4xl"
+                />
+              </div>
 
-            <div className="relative mt-4 grid grid-cols-2 gap-2 md:grid-cols-3">
-              {lineupArtists.map((artist) => (
-                <a
-                  key={artist.name}
-                  href={getSoundCloudUrl(artist)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center justify-center rounded-md border border-[#f3eadb]/20 bg-[#100d0b]/72 px-3 py-2 text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-[#f8f0e3]/82 shadow-[0_8px_20px_rgba(0,0,0,0.18)] transition duration-300 ease-out hover:border-[#ffffff]/30 hover:bg-[#17110d] hover:text-[#f8f0e3] active:border-[#ff7700]/55 active:bg-[#1c130e] md:text-[0.68rem]"
-                >
-                  {artist.name}
-                </a>
-              ))}
+              <div className="relative mt-4 grid grid-cols-6 gap-2">
+                {lineupArtists.map((artist, artistIndex) => (
+                  <a
+                    key={artist.id}
+                    href={getSoundCloudUrl(artist)}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={getLineupArtistGridStyle(
+                      lineupArtists.length,
+                      artistIndex,
+                    )}
+                    className="col-[span_var(--lineup-mobile-span)/span_var(--lineup-mobile-span)] inline-flex w-full items-center justify-center rounded-md border border-[#f3eadb]/20 bg-[#100d0b]/72 px-3 py-2 text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-[#f8f0e3]/82 shadow-[0_8px_20px_rgba(0,0,0,0.18)] transition duration-300 ease-out hover:border-[#ffffff]/30 hover:bg-[#17110d] hover:text-[#f8f0e3] active:border-[#ff7700]/55 active:bg-[#1c130e] md:col-[span_var(--lineup-desktop-span)/span_var(--lineup-desktop-span)] md:text-[0.65rem]"
+                  >
+                    <p className="max-w-[95%] text-center truncate">
+                      {artist.name}
+                    </p>
+                  </a>
+                ))}
+              </div>
             </div>
-          </div>
+          ) : null}
         </section>
 
         <section className="pb-2 md:pb-4">

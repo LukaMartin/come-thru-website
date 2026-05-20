@@ -248,6 +248,29 @@ export type Database = {
           Database["public"]["Tables"]["site_gallery_images"]["Insert"]
         >;
       };
+      lineup_artists: {
+        Row: {
+          id: string;
+          event_id: string;
+          slot: number;
+          name: string;
+          soundcloud_url: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          event_id: string;
+          slot: number;
+          name: string;
+          soundcloud_url?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["lineup_artists"]["Insert"]
+        >;
+      };
     };
     Functions: {
       ticketing_fulfill_checkout_session: {

@@ -102,6 +102,12 @@ const ticketTypeSchema = z
       : null,
   }));
 
+const lineupArtistSchema = z.object({
+  slot: z.coerce.number().int().min(0).max(5),
+  name: nullableText,
+  soundcloud_url: nullableText,
+});
+
 function formToEventInput(formData: FormData) {
   return eventSchema.parse({
     slug: formData.get("slug"),
@@ -130,6 +136,16 @@ function formToTicketTypeInput(formData: FormData) {
     sort_order: formData.get("sort_order"),
     active: formData.get("active") === "on",
   });
+}
+
+function formToLineupArtistInputs(formData: FormData) {
+  return Array.from({ length: 6 }, (_, slot) =>
+    lineupArtistSchema.parse({
+      slot,
+      name: formData.get(`name_${slot}`),
+      soundcloud_url: formData.get(`soundcloud_url_${slot}`),
+    }),
+  );
 }
 
 function getActionError(
@@ -283,6 +299,83 @@ export async function updateTicketTypeAction(
         action: "ticket_type_update",
         eventId,
         ticketTypeId,
+      }),
+    };
+  }
+}
+
+export async function updateLineupArtistsAction(
+  eventId: string,
+  _state: AdminMutationState,
+  formData: FormData,
+): Promise<AdminMutationState> {
+  await requireAdmin();
+
+  try {
+    const input = formToLineupArtistInputs(formData);
+    const firstEmptySlot = input.find((artist) => artist.name === null)?.slot;
+    const filledAfterEmpty =
+      firstEmptySlot !== undefined &&
+      input.some((artist) => artist.slot > firstEmptySlot && artist.name);
+
+    if (filledAfterEmpty) {
+      return { error: "Fill lineup slots from 0 upward with no gaps." };
+    }
+
+    const artistWithUrlOnly = input.find(
+      (artist) => !artist.name && artist.soundcloud_url,
+    );
+
+    if (artistWithUrlOnly) {
+      return {
+        error: `Slot ${artistWithUrlOnly.slot} needs a name or no URL.`,
+      };
+    }
+
+    const artistsToUpsert = input
+      .filter((artist) => artist.name)
+      .map((artist) => ({
+        event_id: eventId,
+        slot: artist.slot,
+        name: artist.name as string,
+        soundcloud_url: artist.soundcloud_url,
+      }));
+    const slotsToDelete = input
+      .filter((artist) => !artist.name)
+      .map((artist) => artist.slot);
+
+    const { supabase } = await createSessionAuthClient();
+
+    if (artistsToUpsert.length > 0) {
+      const { error } = await supabase
+        .from("lineup_artists")
+        .upsert(artistsToUpsert, { onConflict: "event_id,slot" });
+
+      if (error) {
+        throw error;
+      }
+    }
+
+    if (slotsToDelete.length > 0) {
+      const { error } = await supabase
+        .from("lineup_artists")
+        .delete()
+        .eq("event_id", eventId)
+        .in("slot", slotsToDelete);
+
+      if (error) {
+        throw error;
+      }
+    }
+
+    revalidatePath("/tickets");
+    revalidatePath(`/admin/events/${eventId}`);
+    return { success: "Lineup artists updated." };
+  } catch (error) {
+    return {
+      error: getActionError(error, {
+        action: "lineup_artists_update",
+        eventId,
       }),
     };
   }

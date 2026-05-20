@@ -4,10 +4,16 @@ import { createServiceClient } from "@/lib/supabase/server";
 type EventRow = Database["public"]["Tables"]["ticketing_events"]["Row"];
 type TicketTypeRow =
   Database["public"]["Tables"]["ticketing_ticket_types"]["Row"];
+type LineupArtistRow = Database["public"]["Tables"]["lineup_artists"]["Row"];
 
 export type EventWithTickets = EventRow & {
   ticketing_ticket_types: TicketTypeRow[];
 };
+
+export type LineupArtist = Pick<
+  LineupArtistRow,
+  "id" | "slot" | "name" | "soundcloud_url"
+>;
 
 export async function getCurrentEvent() {
   const supabase = createServiceClient();
@@ -59,4 +65,20 @@ export async function getTicketCountsByType(ticketTypeIds: string[]) {
     );
     return counts;
   }, new Map<string, number>());
+}
+
+export async function getLineupArtistsByEventId(eventId: string) {
+  const supabase = createServiceClient();
+
+  const { data, error } = await supabase
+    .from("lineup_artists")
+    .select("id, slot, name, soundcloud_url")
+    .eq("event_id", eventId)
+    .order("slot", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []) as LineupArtist[];
 }
