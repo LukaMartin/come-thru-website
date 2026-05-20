@@ -23,9 +23,9 @@ const initialForm: FormState = {
 
 export function ContactForm() {
   const [form, setForm] = useState<FormState>(initialForm);
-  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">(
-    "idle",
-  );
+  const [status, setStatus] = useState<
+    "idle" | "loading" | "success" | "error"
+  >("idle");
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -51,7 +51,9 @@ export function ContactForm() {
       if (!response.ok) {
         const fieldError = Object.values(payload.fieldErrors ?? {}).flat()[0];
 
-        throw new Error(fieldError ?? payload.error ?? "Unable to send your message.");
+        throw new Error(
+          fieldError ?? payload.error ?? "Unable to send your message.",
+        );
       }
 
       setForm(initialForm);
@@ -123,7 +125,9 @@ export function ContactForm() {
             type="email"
             maxLength={254}
             value={form.email}
-            onChange={(event) => setForm({ ...form, email: event.target.value })}
+            onChange={(event) =>
+              setForm({ ...form, email: event.target.value })
+            }
             className={fieldClass}
             placeholder="you@example.com"
             autoComplete="new-password"
@@ -138,7 +142,9 @@ export function ContactForm() {
           type="text"
           maxLength={160}
           value={form.subject}
-          onChange={(event) => setForm({ ...form, subject: event.target.value })}
+          onChange={(event) =>
+            setForm({ ...form, subject: event.target.value })
+          }
           className={fieldClass}
           placeholder="Ticket question, booking enquiry, or general message"
           autoComplete="new-password"
@@ -153,7 +159,9 @@ export function ContactForm() {
           maxLength={4000}
           rows={6}
           value={form.message}
-          onChange={(event) => setForm({ ...form, message: event.target.value })}
+          onChange={(event) =>
+            setForm({ ...form, message: event.target.value })
+          }
           className={`${fieldClass} resize-none leading-6`}
           placeholder="Tell us what you need help with."
           autoComplete="new-password"
@@ -175,7 +183,7 @@ export function ContactForm() {
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full rounded-full bg-[#f8f0e3] px-6 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-black transition duration-300 hover:bg-white disabled:cursor-not-allowed disabled:opacity-40 md:w-auto"
+        className="w-full rounded-md bg-[#f8f0e3] px-6 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-black transition duration-300 hover:bg-white disabled:cursor-not-allowed disabled:opacity-40 md:w-auto"
       >
         {isLoading ? "Sending..." : "Send message"}
       </button>

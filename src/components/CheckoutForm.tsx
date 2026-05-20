@@ -46,8 +46,8 @@ function QuantityStepper({
   return (
     <div
       className={twMerge(
-        "flex h-9 shrink-0 items-center rounded-full border border-[#f3eadb]/12 bg-black/50 p-1 shadow-inner shadow-white/5 lg:h-12",
-        isSoldOut && "hidden",
+        "flex h-10 shrink-0 items-center rounded-full border border-[#f3eadb]/12 bg-black/50 p-1 shadow-inner shadow-white/5 lg:h-12",
+        isSoldOut && "opacity-35",
       )}
     >
       <button
@@ -55,7 +55,7 @@ function QuantityStepper({
         disabled={!canDecrease}
         aria-label="Decrease ticket quantity"
         onClick={() => onChange(ticketId, Math.max(value - 1, 0))}
-        className="flex size-7 items-center justify-center rounded-full text-lg font-semibold leading-none text-[#f8f0e3] transition duration-300 hover:bg-[#f3eadb]/10 disabled:cursor-not-allowed disabled:text-[#f3eadb]/24 lg:size-10"
+        className="flex size-8 items-center justify-center rounded-full text-lg font-semibold leading-none text-[#f8f0e3] transition duration-300 hover:bg-[#f3eadb]/10 disabled:cursor-not-allowed disabled:text-[#f3eadb]/24 lg:size-10 disabled:hover:bg-transparent"
       >
         −
       </button>
@@ -67,7 +67,7 @@ function QuantityStepper({
         disabled={!canIncrease}
         aria-label="Increase ticket quantity"
         onClick={() => onChange(ticketId, Math.min(value + 1, max))}
-        className="flex size-7 items-center justify-center rounded-full text-lg font-semibold leading-none text-[#f8f0e3] transition duration-300 hover:bg-[#f3eadb]/10 disabled:cursor-not-allowed disabled:text-[#f3eadb]/24 lg:size-10"
+        className="flex size-8 items-center justify-center rounded-full text-lg font-semibold leading-none text-[#f8f0e3] transition duration-300 hover:bg-[#f3eadb]/10 disabled:cursor-not-allowed disabled:text-[#f3eadb]/24 lg:size-10 disabled:hover:bg-transparent"
       >
         +
       </button>
@@ -174,10 +174,7 @@ export function CheckoutForm({ eventId, isFree, tickets }: CheckoutFormProps) {
         <div className="relative overflow-hidden border border-[#f3eadb]/12 bg-[radial-gradient(circle_at_18%_18%,rgba(172,67,43,0.34),transparent_34%),radial-gradient(circle_at_82%_22%,rgba(215,199,173,0.16),transparent_28%),rgba(0,0,0,0.28)] p-4 lg:p-5">
           <div className="pointer-events-none absolute -right-10 -top-10 size-28 rounded-full bg-[#d7c7ad]/18 blur-2xl" />
           <div className="relative">
-            <h3 className="text-lg font-black uppercase leading-none tracking-[-0.045em] text-[#f8f0e3] lg:text-3xl small-laptop:text-2xl">
-              No checkout required
-            </h3>
-            <p className="mt-3 text-sm leading-6 text-[#f3eadb]/62 md:text-base md:leading-8 small-laptop:leading-7">
+            <p className="text-sm leading-6 text-[#f3eadb]/62 md:text-base md:leading-8 small-laptop:leading-7">
               This event is free to attend, there are no ticket options or
               payment steps. Check the event details, bring your friends and
               come through.
@@ -192,91 +189,103 @@ export function CheckoutForm({ eventId, isFree, tickets }: CheckoutFormProps) {
   }
 
   return (
-    <div className="space-y-2.5 lg:space-y-4">
-      {tickets.map((ticket) => {
-        const remaining = Math.max(ticket.capacity - ticket.sold, 0);
-        const selected = quantities[ticket.id] ?? 0;
-        const maxQuantity = Math.min(remaining, 10);
-        const isTicketSoldOut = remaining === 0;
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto overscroll-contain pr-1 lg:space-y-4">
+        {tickets.map((ticket) => {
+          const remaining = Math.max(ticket.capacity - ticket.sold, 0);
+          const selected = quantities[ticket.id] ?? 0;
+          const maxQuantity = Math.min(remaining, 10);
+          const isTicketSoldOut = remaining === 0;
 
-        return (
-          <div
-            key={ticket.id}
-            className="border border-[#f3eadb]/12 bg-black/24 p-3 lg:p-5"
-          >
-            <div className="flex items-center justify-between gap-3 lg:gap-4">
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="text-base font-semibold leading-tight text-[#f8f0e3] lg:text-xl">
+          return (
+            <div
+              key={ticket.id}
+              className={twMerge(
+                "border border-[#f3eadb]/12 bg-black/24 p-3 transition duration-300 lg:p-5",
+                isTicketSoldOut && "border-[#f3eadb]/8 bg-black/14",
+              )}
+            >
+              <div className="flex items-center justify-between gap-3 lg:gap-4">
+                <div className="min-w-0">
+                  <h3
+                    className={twMerge(
+                      "text-base font-semibold leading-tight text-[#f8f0e3] lg:text-xl",
+                      isTicketSoldOut && "text-[#f8f0e3]/55",
+                    )}
+                  >
                     {ticket.name}
                   </h3>
-                  {isTicketSoldOut ? (
-                    <span className="rounded-full border border-red-300/20 bg-red-400/10 px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-red-200">
-                      Sold out
-                    </span>
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                    <p className="text-sm font-medium text-[#d7c7ad]">
+                      {formatMoney(ticket.price_cents, ticket.currency)}
+                    </p>
+                    {isTicketSoldOut ? (
+                      <span className="rounded-full border border-red-300/20 bg-red-400/10 px-2 py-0.5 text-[0.55rem] font-semibold uppercase tracking-[0.18em] text-red-200">
+                        Sold out
+                      </span>
+                    ) : null}
+                  </div>
+                  {ticket.description ? (
+                    <p className="mt-1 text-xs text-[#f3eadb]/52 lg:text-sm">
+                      {ticket.description}
+                    </p>
                   ) : null}
                 </div>
-                <p className="mt-1 text-sm font-medium text-[#d7c7ad]">
-                  {formatMoney(ticket.price_cents, ticket.currency)}
-                </p>
-                {ticket.description ? (
-                  <p className="mt-1 text-xs text-[#f3eadb]/52 lg:text-sm">
-                    {ticket.description}
-                  </p>
-                ) : null}
+
+                <QuantityStepper
+                  disabled={isTicketSoldOut || !isSaleActive || isLoading}
+                  max={maxQuantity}
+                  ticketId={ticket.id}
+                  value={selected}
+                  isSoldOut={isTicketSoldOut}
+                  onChange={(ticketId, quantity) =>
+                    setQuantities((current) => ({
+                      ...current,
+                      [ticketId]: quantity,
+                    }))
+                  }
+                />
               </div>
-
-              <QuantityStepper
-                disabled={isTicketSoldOut || !isSaleActive || isLoading}
-                max={maxQuantity}
-                ticketId={ticket.id}
-                value={selected}
-                isSoldOut={isTicketSoldOut}
-                onChange={(ticketId, quantity) =>
-                  setQuantities((current) => ({
-                    ...current,
-                    [ticketId]: quantity,
-                  }))
-                }
-              />
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
 
-      {error ? <p className="text-sm text-red-300">{error}</p> : null}
+      <div className="shrink-0 border-t border-[#f3eadb]/12 bg-[#070605] pt-4 lg:pt-5">
+        {error ? <p className="mb-3 text-sm text-red-300">{error}</p> : null}
 
-      <button
-        type="button"
-        disabled={isSoldOut || !isSaleActive || total === 0 || isLoading}
-        onClick={startCheckout}
-        className="w-full rounded-full bg-[#f8f0e3] px-6 py-2.5 text-sm font-semibold uppercase tracking-[0.18em] text-black transition duration-300 hover:bg-white disabled:cursor-not-allowed disabled:opacity-40 small-laptop:py-3 lg:py-4 lg:text-base"
-      >
-        {isSoldOut
-          ? "Sold Out"
-          : !isSaleActive
-            ? "Sales Closed"
-            : isLoading
-              ? "Opening checkout..."
-              : `Checkout · ${formatMoney(total)}`}
-      </button>
-      <p className="px-2 text-center text-[0.7rem] leading-5 text-[#f3eadb]/42 lg:text-xs">
-        By purchasing a ticket, you agree to the{" "}
-        <Link
-          href="/terms"
-          className="underline underline-offset-4 hover:text-[#f8f0e3] transition duration-300"
+        <button
+          type="button"
+          disabled={isSoldOut || !isSaleActive || total === 0 || isLoading}
+          onClick={startCheckout}
+          className="w-full rounded-md bg-[#f8f0e3] px-6 py-2.5 text-sm font-semibold uppercase tracking-[0.18em] text-black transition duration-300 hover:bg-white disabled:cursor-not-allowed disabled:opacity-40 small-laptop:py-3 lg:py-4 lg:text-base"
         >
-          Terms & Conditions
-        </Link>{" "}
-        and{" "}
-        <Link
-          href="/privacy"
-          className="underline underline-offset-4 hover:text-[#f8f0e3] transition duration-300"
-        >
-          Privacy Policy
-        </Link>
-        .
-      </p>
+          {isSoldOut
+            ? "Sold Out"
+            : !isSaleActive
+              ? "Sales Closed"
+              : isLoading
+                ? "Opening checkout..."
+                : `Checkout · ${formatMoney(total)}`}
+        </button>
+        <p className="mt-2 px-2 text-center text-[0.7rem] leading-5 text-[#f3eadb]/42 lg:text-xs">
+          By purchasing a ticket, you agree to the{" "}
+          <Link
+            href="/terms"
+            className="underline underline-offset-4 hover:text-[#f8f0e3] transition duration-300"
+          >
+            Terms & Conditions
+          </Link>{" "}
+          and{" "}
+          <Link
+            href="/privacy"
+            className="underline underline-offset-4 hover:text-[#f8f0e3] transition duration-300"
+          >
+            Privacy Policy
+          </Link>
+          .
+        </p>
+      </div>
     </div>
   );
 }

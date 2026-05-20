@@ -129,9 +129,9 @@ export default async function Home() {
                 <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <Link
                     href="/tickets"
-                    className="inline-flex w-full items-center justify-center rounded-full bg-[#f8f0e3] px-6 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-white sm:w-fit"
+                    className="inline-flex w-full items-center justify-center rounded-md bg-[#f8f0e3] px-6 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-white sm:w-fit"
                   >
-                    {event.is_free ? "View event" : "Get tickets"}
+                    View event
                   </Link>
                 </div>
               </div>

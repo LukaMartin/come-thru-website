@@ -37,6 +37,7 @@ export function AdminTicketTypeForm({
             required
             defaultValue={ticketType?.name ?? ""}
             className={inputClass}
+            autoComplete="new-password"
           />
         </label>
         <label className={labelClass}>
@@ -46,6 +47,7 @@ export function AdminTicketTypeForm({
             defaultValue={ticketType?.stripe_price_id ?? ""}
             className={inputClass}
             placeholder="price_..."
+            autoComplete="new-password"
           />
         </label>
       </div>
@@ -57,6 +59,7 @@ export function AdminTicketTypeForm({
           defaultValue={ticketType?.description ?? ""}
           rows={3}
           className={inputClass}
+          autoComplete="new-password"
         />
       </label>
 
@@ -70,6 +73,7 @@ export function AdminTicketTypeForm({
             required
             defaultValue={ticketType?.price_cents ?? 0}
             className={inputClass}
+            autoComplete="new-password"
           />
         </label>
         <label className={labelClass}>
@@ -79,6 +83,7 @@ export function AdminTicketTypeForm({
             required
             defaultValue={ticketType?.currency ?? "aud"}
             className={inputClass}
+            autoComplete="new-password"
           />
         </label>
         <label className={labelClass}>
@@ -90,6 +95,7 @@ export function AdminTicketTypeForm({
             required
             defaultValue={ticketType?.capacity ?? 0}
             className={inputClass}
+            autoComplete="new-password"
           />
         </label>
         <label className={labelClass}>
@@ -100,6 +106,7 @@ export function AdminTicketTypeForm({
             required
             defaultValue={ticketType?.sort_order ?? 0}
             className={inputClass}
+            autoComplete="new-password"
           />
         </label>
       </div>
@@ -112,6 +119,7 @@ export function AdminTicketTypeForm({
             defaultValue={ticketType?.sales_start_at ?? ""}
             className={inputClass}
             placeholder="2026-06-01T10:00:00+10:00"
+            autoComplete="new-password"
           />
         </label>
         <label className={labelClass}>
@@ -121,6 +129,7 @@ export function AdminTicketTypeForm({
             defaultValue={ticketType?.sales_end_at ?? ""}
             className={inputClass}
             placeholder="2026-06-01T19:00:00+10:00"
+            autoComplete="new-password"
           />
         </label>
       </div>
