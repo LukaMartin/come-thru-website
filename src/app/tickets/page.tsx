@@ -164,9 +164,9 @@ export default async function TicketsPage({ searchParams }: TicketsPageProps) {
           </div>
 
           <div className="order-3 relative overflow-hidden border border-[#f3eadb]/14 bg-[linear-gradient(180deg,rgba(255,119,0,0.06),transparent_46%),rgba(8,7,6,0.96)] p-5 shadow-2xl shadow-black/30 small-laptop:p-4.5 md:p-6 lg:col-start-2 lg:row-start-3">
-            <div className="pointer-events-none absolute right-8 top-0 h-px w-28 bg-linear-to-r from-transparent via-[#ff7700]/32 to-transparent" />
-            <div className="pointer-events-none absolute bottom-0 left-8 h-px w-28 bg-linear-to-r from-transparent via-[#ff7700]/35 to-transparent" />
-            <div className="pointer-events-none absolute -right-10 top-8 h-28 w-28 rounded-full bg-[#ff7700]/7 blur-2xl" />
+            <div className="pointer-events-none absolute right-8 top-0 h-px w-28 bg-linear-to-r from-transparent via-[#ff7700]/45 to-transparent" />
+            <div className="pointer-events-none absolute bottom-0 left-8 h-px w-28 bg-linear-to-r from-transparent via-[#ff7700]/48 to-transparent" />
+            <div className="pointer-events-none absolute -right-10 top-8 h-28 w-28 rounded-full bg-[#ff7700]/10 blur-2xl" />
 
             <div className="relative flex items-center justify-between gap-5 border-b border-[#f3eadb]/10 pb-4">
               <p className="text-[0.68rem] uppercase tracking-[0.45em] text-[#d7c7ad]">
@@ -185,7 +185,7 @@ export default async function TicketsPage({ searchParams }: TicketsPageProps) {
                   href={getSoundCloudUrl(artist)}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center justify-center rounded-sm border border-[#f3eadb]/11 bg-[#f3eadb]/3.5 px-3 py-2 text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-[#f8f0e3]/72 shadow-[0_8px_24px_rgba(0,0,0,0.15)] transition duration-300 ease-out hover:border-[#f3eadb]/24 hover:bg-[#f3eadb]/8 hover:text-[#f8f0e3] hover:shadow-[0_12px_32px_rgba(0,0,0,0.22)] active:border-[#f3eadb]/30 md:text-[0.68rem]"
+                  className="inline-flex items-center justify-center rounded-md border border-[#f3eadb]/20 bg-[#100d0b]/72 px-3 py-2 text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-[#f8f0e3]/82 shadow-[0_8px_20px_rgba(0,0,0,0.18)] transition duration-300 ease-out hover:border-[#ffffff]/30 hover:bg-[#17110d] hover:text-[#f8f0e3] active:border-[#ff7700]/55 active:bg-[#1c130e] md:text-[0.68rem]"
                 >
                   {artist.name}
                 </a>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { twMerge } from "tailwind-merge";
 
@@ -48,8 +48,9 @@ export function CheckoutPanel({
   const searchParams = useSearchParams();
   const panelRef = useRef<HTMLElement | null>(null);
   const viewParam = searchParams.get("view");
-  const isDrawerOpen =
-    !isFree && (viewParam ? viewParam === "tickets" : initialDrawerOpen);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(
+    () => !isFree && (viewParam ? viewParam === "tickets" : initialDrawerOpen),
+  );
   const sortedTickets = useMemo(
     () =>
       [...tickets].sort(
@@ -123,9 +124,15 @@ export function CheckoutPanel({
       return;
     }
 
+    setIsDrawerOpen(isOpen);
+
     const nextParams = new URLSearchParams(searchParams.toString());
     nextParams.set("view", isOpen ? "tickets" : "info");
-    router.replace(`${pathname}?${nextParams.toString()}`, { scroll: false });
+    window.history.replaceState(
+      null,
+      "",
+      `${pathname}?${nextParams.toString()}`,
+    );
   }
 
   if (isFree) {

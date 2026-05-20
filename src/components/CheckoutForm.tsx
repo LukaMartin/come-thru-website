@@ -258,7 +258,7 @@ export function CheckoutForm({ eventId, isFree, tickets }: CheckoutFormProps) {
           type="button"
           disabled={isSoldOut || !isSaleActive || total === 0 || isLoading}
           onClick={startCheckout}
-          className="w-full rounded-md bg-[#f8f0e3] px-6 py-2.5 text-sm font-semibold uppercase tracking-[0.18em] text-black transition duration-300 hover:bg-white disabled:cursor-not-allowed disabled:opacity-40 small-laptop:py-3 lg:py-4 lg:text-base"
+          className="w-full rounded-md bg-[#f8f0e3] px-6 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-black transition duration-300 hover:bg-white disabled:cursor-not-allowed disabled:opacity-40 small-laptop:py-3 lg:py-4 lg:text-base"
         >
           {isSoldOut
             ? "Sold Out"
