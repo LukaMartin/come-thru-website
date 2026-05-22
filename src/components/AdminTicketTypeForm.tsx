@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import type { AdminMutationState } from "@/lib/admin-events-actions";
 import type { Database } from "@/lib/database.types";
+import { formatSydneyDateTimeLocal } from "@/lib/event-time";
 
 type TicketTypeRow =
   Database["public"]["Tables"]["ticketing_ticket_types"]["Row"];
@@ -116,9 +117,11 @@ export function AdminTicketTypeForm({
           Sales start
           <input
             name="sales_start_at"
-            defaultValue={ticketType?.sales_start_at ?? ""}
+            type="datetime-local"
+            defaultValue={formatSydneyDateTimeLocal(
+              ticketType?.sales_start_at ?? null,
+            )}
             className={inputClass}
-            placeholder="2026-06-01T10:00:00+10:00"
             autoComplete="new-password"
           />
         </label>
@@ -126,9 +129,11 @@ export function AdminTicketTypeForm({
           Sales end
           <input
             name="sales_end_at"
-            defaultValue={ticketType?.sales_end_at ?? ""}
+            type="datetime-local"
+            defaultValue={formatSydneyDateTimeLocal(
+              ticketType?.sales_end_at ?? null,
+            )}
             className={inputClass}
-            placeholder="2026-06-01T19:00:00+10:00"
             autoComplete="new-password"
           />
         </label>

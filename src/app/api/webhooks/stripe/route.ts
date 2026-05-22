@@ -194,6 +194,7 @@ async function handleCheckoutCompleted(
       ticket,
     ]),
   );
+
   const orderItems = stripeLineItems.data.map((item) => {
     const priceId = item.price?.id;
     const ticketType = priceId ? ticketTypeByStripePriceId.get(priceId) : null;
@@ -210,13 +211,16 @@ async function handleCheckoutCompleted(
       unit_amount_cents: item.price?.unit_amount ?? ticketType.price_cents,
     };
   });
+
   const ticketTypeById = new Map(
     [...ticketTypeByStripePriceId.values()].map((ticket) => [
       ticket.id,
       ticket,
     ]),
   );
+
   let nextTicketNumber = 1;
+  
   const pendingTickets = orderItems.flatMap((item) =>
     Array.from({ length: item.quantity }).map(() => {
       const secret = createTicketSecret();

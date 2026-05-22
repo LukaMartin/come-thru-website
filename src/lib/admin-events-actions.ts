@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createSessionAuthClient, requireAdmin } from "@/lib/admin-auth";
+import { sydneyDateTimeLocalToIso } from "@/lib/event-time";
 import * as Sentry from "@sentry/nextjs";
 
 export type AdminMutationState = {
@@ -37,26 +38,38 @@ const eventSchema = z
     status: eventStatusSchema.optional(),
   })
   .superRefine((value, context) => {
-    if (Number.isNaN(Date.parse(value.starts_at))) {
+    try {
+      sydneyDateTimeLocalToIso(value.starts_at);
+    } catch (error) {
       context.addIssue({
         code: "custom",
         path: ["starts_at"],
-        message: "Use an ISO date/time with timezone.",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Use a Sydney local date/time.",
       });
     }
 
-    if (value.ends_at && Number.isNaN(Date.parse(value.ends_at))) {
+    try {
+      if (value.ends_at) {
+        sydneyDateTimeLocalToIso(value.ends_at);
+      }
+    } catch (error) {
       context.addIssue({
         code: "custom",
         path: ["ends_at"],
-        message: "Use an ISO date/time with timezone.",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Use a Sydney local date/time.",
       });
     }
   })
   .transform((value) => ({
     ...value,
-    starts_at: new Date(value.starts_at).toISOString(),
-    ends_at: value.ends_at ? new Date(value.ends_at).toISOString() : null,
+    starts_at: sydneyDateTimeLocalToIso(value.starts_at),
+    ends_at: value.ends_at ? sydneyDateTimeLocalToIso(value.ends_at) : null,
   }));
 
 const ticketTypeSchema = z
@@ -73,32 +86,43 @@ const ticketTypeSchema = z
     active: z.boolean(),
   })
   .superRefine((value, context) => {
-    if (
-      value.sales_start_at &&
-      Number.isNaN(Date.parse(value.sales_start_at))
-    ) {
+    try {
+      if (value.sales_start_at) {
+        sydneyDateTimeLocalToIso(value.sales_start_at);
+      }
+    } catch (error) {
       context.addIssue({
         code: "custom",
         path: ["sales_start_at"],
-        message: "Use an ISO date/time with timezone.",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Use a Sydney local date/time.",
       });
     }
 
-    if (value.sales_end_at && Number.isNaN(Date.parse(value.sales_end_at))) {
+    try {
+      if (value.sales_end_at) {
+        sydneyDateTimeLocalToIso(value.sales_end_at);
+      }
+    } catch (error) {
       context.addIssue({
         code: "custom",
         path: ["sales_end_at"],
-        message: "Use an ISO date/time with timezone.",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Use a Sydney local date/time.",
       });
     }
   })
   .transform((value) => ({
     ...value,
     sales_start_at: value.sales_start_at
-      ? new Date(value.sales_start_at).toISOString()
+      ? sydneyDateTimeLocalToIso(value.sales_start_at)
       : null,
     sales_end_at: value.sales_end_at
-      ? new Date(value.sales_end_at).toISOString()
+      ? sydneyDateTimeLocalToIso(value.sales_end_at)
       : null,
   }));
 

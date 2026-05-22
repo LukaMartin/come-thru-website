@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import type { AdminMutationState } from "@/lib/admin-events-actions";
 import type { Database } from "@/lib/database.types";
+import { formatSydneyDateTimeLocal } from "@/lib/event-time";
 
 type EventRow = Database["public"]["Tables"]["ticketing_events"]["Row"];
 
@@ -19,10 +20,6 @@ const initialState: AdminMutationState = {};
 const inputClass =
   "border border-[#f3eadb]/14 bg-black/35 px-4 py-3 text-sm text-[#f8f0e3] outline-none transition focus:border-[#d7c7ad]/70";
 const labelClass = "grid gap-2 text-sm text-[#f3eadb]/72";
-
-function toInputDate(value: string | null) {
-  return value ?? "";
-}
 
 export function AdminEventForm({ action, event, mode }: AdminEventFormProps) {
   const [state, formAction, isPending] = useActionState(action, initialState);
@@ -86,19 +83,21 @@ export function AdminEventForm({ action, event, mode }: AdminEventFormProps) {
           Starts at
           <input
             name="starts_at"
+            type="datetime-local"
             required
-            defaultValue={toInputDate(event?.starts_at ?? null)}
+            defaultValue={formatSydneyDateTimeLocal(event?.starts_at ?? null)}
             className={inputClass}
-            placeholder="2026-06-01T20:00:00+10:00"
+            autoComplete="new-password"
           />
         </label>
         <label className={labelClass}>
           Ends at
           <input
             name="ends_at"
-            defaultValue={toInputDate(event?.ends_at ?? null)}
+            type="datetime-local"
+            defaultValue={formatSydneyDateTimeLocal(event?.ends_at ?? null)}
             className={inputClass}
-            placeholder="2026-06-02T02:00:00+10:00"
+            autoComplete="new-password"
           />
         </label>
       </div>
