@@ -64,7 +64,7 @@ export default async function Home() {
 
             <div className="relative mt-10 grid gap-8 md:grid-cols-2 md:items-end">
               <p className={`max-w-sm ${bodyCopyClass}`}>
-                Come Thru brings people together around music, we promote safe
+                Come Thru brings people together through music, we promote safe
                 spaces for people to create memories on the dancefloor.
               </p>
 
