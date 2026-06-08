@@ -10,9 +10,8 @@ import { formatEventDateRange } from "@/lib/tickets";
 import { getGalleryImages } from "@/lib/gallery";
 
 export const metadata: Metadata = {
-  title: "Come Thru | Sydney/Eora Dance Music Events",
-  description:
-    "Come Thru runs dance music events in Sydney/Eora. Find the next event, buy tickets, and get in touch.",
+  title: "Come Thru | Eora/Sydney Dance Events",
+  description: "Come Thru runs dance events in Eora/Sydney.",
 };
 
 export const dynamic = "force-dynamic";

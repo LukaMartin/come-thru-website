@@ -6,6 +6,7 @@ import Image from "next/image";
 import logoCream from "../../public/logo-cream.png";
 
 const navLinks = [
+  { href: "/", label: "Home" },
   { href: "/tickets", label: "Tickets" },
   { href: "/faq", label: "FAQ" },
   { href: "/contact", label: "Contact" },
