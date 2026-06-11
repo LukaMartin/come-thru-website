@@ -72,6 +72,7 @@ export async function POST(request: Request) {
       event.id,
       event.type,
       event.data.object as Stripe.Checkout.Session,
+      stripe,
     );
 
     return Response.json({ received: true, ...fulfillment });
@@ -108,6 +109,7 @@ async function handleCheckoutCompleted(
   webhookEventId: string,
   webhookEventType: string,
   session: Stripe.Checkout.Session,
+  stripeClient?: ReturnType<typeof createStripeClient>,
 ) {
   const orderId = session.metadata?.order_id ?? session.client_reference_id;
 
@@ -115,11 +117,12 @@ async function handleCheckoutCompleted(
     throw new Error("Stripe session is missing order_id metadata.");
   }
 
-  const stripe = createStripeClient();
+  const stripe = stripeClient ?? createStripeClient();
   const supabase = createServiceClient();
   const buyerEmail =
     session.customer_details?.email ?? session.customer_email ?? null;
-  const buyerName = session.customer_details?.name ?? null;
+  const buyerName =
+    getBuyerName(session) ?? session.customer_details?.name ?? null;
 
   const { data: order, error: orderError } = await supabase
     .from("ticketing_orders")
@@ -188,11 +191,10 @@ async function handleCheckoutCompleted(
     throw stripeTicketTypesError;
   }
 
+  const ticketTypes = (stripeTicketTypes ?? []) as TicketType[];
+
   const ticketTypeByStripePriceId = new Map(
-    ((stripeTicketTypes ?? []) as TicketType[]).map((ticket) => [
-      ticket.stripe_price_id,
-      ticket,
-    ]),
+    ticketTypes.map((ticket) => [ticket.stripe_price_id, ticket]),
   );
 
   const orderItems = stripeLineItems.data.map((item) => {
@@ -213,14 +215,11 @@ async function handleCheckoutCompleted(
   });
 
   const ticketTypeById = new Map(
-    [...ticketTypeByStripePriceId.values()].map((ticket) => [
-      ticket.id,
-      ticket,
-    ]),
+    ticketTypes.map((ticket) => [ticket.id, ticket]),
   );
 
   let nextTicketNumber = 1;
-  
+
   const pendingTickets = orderItems.flatMap((item) =>
     Array.from({ length: item.quantity }).map(() => {
       const secret = createTicketSecret();
@@ -280,7 +279,7 @@ async function handleCheckoutCompleted(
 
   if (fulfilledTickets.length > 0) {
     if (!buyerEmail) {
-      await markTicketEmailDelivery(order.id, "skipped");
+      await markTicketEmailDelivery(order.id, "skipped", undefined, supabase);
     } else {
       try {
         const emailTickets = await Promise.all(
@@ -316,13 +315,14 @@ async function handleCheckoutCompleted(
           tickets: emailTickets,
           venueAddress: fulfillment.venue_address ?? "",
         });
-        await markTicketEmailDelivery(order.id, "sent");
+        await markTicketEmailDelivery(order.id, "sent", undefined, supabase);
       } catch (error) {
         try {
           await markTicketEmailDelivery(
             order.id,
             "failed",
             error instanceof Error ? error.message : "Ticket email failed.",
+            supabase,
           );
         } catch (deliveryError) {
           Sentry.captureException(deliveryError, {
@@ -354,8 +354,9 @@ async function markTicketEmailDelivery(
   orderId: string,
   status: "sent" | "failed" | "skipped",
   error?: string,
+  supabaseClient?: ReturnType<typeof createServiceClient>,
 ) {
-  const supabase = createServiceClient();
+  const supabase = supabaseClient ?? createServiceClient();
   const { error: updateError } = await supabase.rpc(
     "ticketing_mark_ticket_email_delivery",
     {
@@ -369,3 +370,17 @@ async function markTicketEmailDelivery(
     throw updateError;
   }
 }
+
+const getCustomTextFieldValue = (
+  session: Stripe.Checkout.Session,
+  key: string,
+) => {
+  return session.custom_fields?.find((field) => field.key === key)?.text?.value;
+};
+
+const getBuyerName = (session: Stripe.Checkout.Session) => {
+  const firstName = getCustomTextFieldValue(session, "buyer_first_name");
+  const lastName = getCustomTextFieldValue(session, "buyer_last_name");
+
+  return [firstName, lastName].filter(Boolean).join(" ") || null;
+};

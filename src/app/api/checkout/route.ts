@@ -1,26 +1,32 @@
 import { z } from "zod";
-
 import type { Database } from "@/lib/database.types";
 import { getAppUrl } from "@/lib/env";
 import { getTicketCountsByType } from "@/lib/events";
 import { createOrderReference } from "@/lib/order-reference";
 import { createServiceClient } from "@/lib/supabase/server";
 import { createStripeClient } from "@/lib/stripe";
+import {
+  MAX_QUANTITY_PER_TRANSACTION,
+  MIN_QUANTITY_PER_TRANSACTION,
+} from "@/lib/checkout";
 
 export const dynamic = "force-dynamic";
 
 type TicketType = Database["public"]["Tables"]["ticketing_ticket_types"]["Row"];
 
 const checkoutSchema = z.object({
-  eventId: z.string().uuid(),
+  eventId: z.uuid(),
   items: z
     .array(
       z.object({
-        ticketTypeId: z.string().uuid(),
-        quantity: z.number().int().min(1).max(10),
+        ticketTypeId: z.uuid(),
+        quantity: z
+          .int()
+          .min(MIN_QUANTITY_PER_TRANSACTION)
+          .max(MAX_QUANTITY_PER_TRANSACTION),
       }),
     )
-    .min(1),
+    .min(MIN_QUANTITY_PER_TRANSACTION),
 });
 
 export async function POST(request: Request) {
@@ -70,7 +76,7 @@ export async function POST(request: Request) {
   }
 
   const now = Date.now();
-  const soldCounts = await getTicketCountsByType(itemIds);
+  const soldCounts = await getTicketCountsByType(itemIds, supabase);
   const lineItems: {
     ticketType: TicketType;
     quantity: number;
@@ -85,7 +91,7 @@ export async function POST(request: Request) {
     );
 
     if (!ticketType) {
-      throw new Error("Ticket type disappeared during checkout.");
+      throw new Error("Ticket type not found during checkout.");
     }
 
     const startsAt = ticketType.sales_start_at
@@ -175,6 +181,26 @@ export async function POST(request: Request) {
         price: item.stripePriceId,
         quantity: item.quantity,
       })),
+      custom_fields: [
+        {
+          key: "buyer_first_name",
+          label: {
+            type: "custom",
+            custom: "First Name",
+          },
+          type: "text",
+          optional: false,
+        },
+        {
+          key: "buyer_last_name",
+          label: {
+            type: "custom",
+            custom: "Last Name",
+          },
+          type: "text",
+          optional: false,
+        },
+      ],
     });
 
     const { error: updateError } = await supabase
