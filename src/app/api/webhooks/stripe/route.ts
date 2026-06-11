@@ -121,8 +121,7 @@ async function handleCheckoutCompleted(
   const supabase = createServiceClient();
   const buyerEmail =
     session.customer_details?.email ?? session.customer_email ?? null;
-  const buyerName =
-    getBuyerName(session) ?? session.customer_details?.name ?? null;
+  const buyerName = session.customer_details?.name ?? null;
 
   const { data: order, error: orderError } = await supabase
     .from("ticketing_orders")
@@ -370,17 +369,3 @@ async function markTicketEmailDelivery(
     throw updateError;
   }
 }
-
-const getCustomTextFieldValue = (
-  session: Stripe.Checkout.Session,
-  key: string,
-) => {
-  return session.custom_fields?.find((field) => field.key === key)?.text?.value;
-};
-
-const getBuyerName = (session: Stripe.Checkout.Session) => {
-  const firstName = getCustomTextFieldValue(session, "buyer_first_name");
-  const lastName = getCustomTextFieldValue(session, "buyer_last_name");
-
-  return [firstName, lastName].filter(Boolean).join(" ") || null;
-};

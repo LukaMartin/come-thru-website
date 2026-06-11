@@ -181,26 +181,6 @@ export async function POST(request: Request) {
         price: item.stripePriceId,
         quantity: item.quantity,
       })),
-      custom_fields: [
-        {
-          key: "buyer_first_name",
-          label: {
-            type: "custom",
-            custom: "First Name",
-          },
-          type: "text",
-          optional: false,
-        },
-        {
-          key: "buyer_last_name",
-          label: {
-            type: "custom",
-            custom: "Last Name",
-          },
-          type: "text",
-          optional: false,
-        },
-      ],
     });
 
     const { error: updateError } = await supabase
