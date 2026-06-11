@@ -2,7 +2,6 @@ import "server-only";
 
 import type { User } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
-
 import {
   clearAdminSessionCookies,
   getJwtPayload,

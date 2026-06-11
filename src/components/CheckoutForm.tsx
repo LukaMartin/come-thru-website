@@ -4,18 +4,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { formatMoney } from "@/lib/tickets";
 import { twMerge } from "tailwind-merge";
-
-type TicketOption = {
-  id: string;
-  name: string;
-  description: string | null;
-  price_cents: number;
-  currency: string;
-  capacity: number;
-  sold: number;
-  sales_start_at: string | null;
-  sales_end_at: string | null;
-};
+import { TicketOption } from "@/lib/checkout";
+import { MAX_QUANTITY_PER_TRANSACTION } from "@/lib/checkout";
 
 type CheckoutFormProps = {
   eventId: string;
@@ -106,8 +96,8 @@ export function CheckoutForm({ eventId, isFree, tickets }: CheckoutFormProps) {
     };
   }, [tickets]);
   const isSaleActive =
-    (saleWindow.startsAt === null || currentTime >= saleWindow.startsAt) &&
-    (saleWindow.endsAt === null || currentTime <= saleWindow.endsAt);
+    (saleWindow.startsAt !== null && currentTime >= saleWindow.startsAt) &&
+    (saleWindow.endsAt !== null && currentTime <= saleWindow.endsAt);
 
   useEffect(() => {
     const nextBoundary = [saleWindow.startsAt, saleWindow.endsAt]
@@ -194,7 +184,7 @@ export function CheckoutForm({ eventId, isFree, tickets }: CheckoutFormProps) {
         {tickets.map((ticket) => {
           const remaining = Math.max(ticket.capacity - ticket.sold, 0);
           const selected = quantities[ticket.id] ?? 0;
-          const maxQuantity = Math.min(remaining, 10);
+          const maxQuantity = Math.min(remaining, MAX_QUANTITY_PER_TRANSACTION);
           const isTicketSoldOut = remaining === 0;
 
           return (

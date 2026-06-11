@@ -1,7 +1,6 @@
 import Image from "next/image";
 import type { CSSProperties } from "react";
 import { FaSoundcloud } from "react-icons/fa";
-
 import { CheckoutPanel } from "@/components/CheckoutPanel";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
@@ -17,7 +16,7 @@ export const dynamic = "force-dynamic";
 
 type TicketsPageProps = {
   searchParams?: Promise<{
-    view?: string | string[];
+    view?: string;
   }>;
 };
 
@@ -57,9 +56,7 @@ function getLineupArtistGridStyle(
 
 export default async function TicketsPage({ searchParams }: TicketsPageProps) {
   const resolvedSearchParams = await searchParams;
-  const viewParam = Array.isArray(resolvedSearchParams?.view)
-    ? resolvedSearchParams.view[0]
-    : resolvedSearchParams?.view;
+  const viewParam = resolvedSearchParams?.view;
   const event = await getCurrentEvent();
 
   if (!event) {

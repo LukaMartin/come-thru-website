@@ -42,12 +42,15 @@ export async function getCurrentEvent() {
   return data as EventWithTickets | null;
 }
 
-export async function getTicketCountsByType(ticketTypeIds: string[]) {
+export async function getTicketCountsByType(
+  ticketTypeIds: string[],
+  supabaseClient?: ReturnType<typeof createServiceClient>,
+) {
   if (ticketTypeIds.length === 0) {
     return new Map<string, number>();
   }
 
-  const supabase = createServiceClient();
+  const supabase = supabaseClient ?? createServiceClient();
   const { data, error } = await supabase
     .from("ticketing_tickets")
     .select("ticket_type_id")

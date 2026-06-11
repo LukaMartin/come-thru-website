@@ -3,21 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { twMerge } from "tailwind-merge";
-
 import { CheckoutForm } from "@/components/CheckoutForm";
 import { formatMoney } from "@/lib/tickets";
-
-type TicketOption = {
-  id: string;
-  name: string;
-  description: string | null;
-  price_cents: number;
-  currency: string;
-  capacity: number;
-  sold: number;
-  sales_start_at: string | null;
-  sales_end_at: string | null;
-};
+import { TicketOption } from "@/lib/checkout";
 
 type CheckoutPanelProps = {
   eventId: string;
