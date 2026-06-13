@@ -9,12 +9,16 @@ import {
   ContactDetailsElement,
   ExpressCheckoutElement,
 } from "@stripe/react-stripe-js";
-import { loadStripe } from "@stripe/stripe-js";
+import {
+  loadStripe,
+  StripeExpressCheckoutElementConfirmEvent,
+} from "@stripe/stripe-js";
 import { formatMoney } from "@/lib/tickets";
 import logoCream from "../../public/logo-cream.png";
 import Image from "next/image";
 import Link from "next/link";
 import * as Sentry from "@sentry/nextjs";
+import { useDebounce, useDebouncedCallback } from "use-debounce";
 
 type CheckoutExitReason = "expired" | "unavailable";
 
@@ -137,6 +141,17 @@ function CheckoutContent({
   const [remainingTime, setRemainingTime] = useState<string | null>(null);
   const [exitReason, setExitReason] = useState<CheckoutExitReason | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [contactEmail, setContactEmail] = useState<string | null>(null);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [nameError, setNameError] = useState<string | null>(null);
+
+  const debouncedFirstName = useDebouncedCallback((value: string) => {
+    setFirstName(value);
+  }, 600);
+  const debouncedLastName = useDebouncedCallback((value: string) => {
+    setLastName(value);
+  }, 600);
 
   useEffect(() => {
     let cancelled = false;
@@ -209,10 +224,16 @@ function CheckoutContent({
     };
   }, [orderId, reservedUntil]);
 
-  async function confirmPayment() {
+  async function confirmPayment(
+    event?: StripeExpressCheckoutElementConfirmEvent,
+    buyerName?: string,
+  ) {
     if (!stripe || !elements || exitReason || isSubmitting) {
       return;
     }
+
+    const email = event?.billingDetails?.email ?? contactEmail;
+    const name = event?.billingDetails?.name ?? buyerName;
 
     setIsSubmitting(true);
 
@@ -220,6 +241,12 @@ function CheckoutContent({
       elements,
       confirmParams: {
         return_url: `${window.location.origin}/success`,
+        payment_method_data: {
+          billing_details: {
+            email,
+            name,
+          },
+        },
       },
       redirect: "if_required",
     });
@@ -240,7 +267,17 @@ function CheckoutContent({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    await confirmPayment();
+
+    const trimmedFirstName = firstName.trim();
+    const trimmedLastName = lastName.trim();
+
+    if (!trimmedFirstName || !trimmedLastName) {
+      setNameError("Enter your first and last name.");
+      return;
+    }
+
+    setNameError(null);
+    await confirmPayment(undefined, `${trimmedFirstName} ${trimmedLastName}`);
   }
 
   async function cancelCheckoutReservation() {
@@ -362,15 +399,68 @@ function CheckoutContent({
               </div>
 
               <ExpressCheckoutElement
-                onConfirm={confirmPayment}
+                onConfirm={(event) => confirmPayment(event)}
                 options={{
                   emailRequired: true,
-                  
+                  billingAddressRequired: true,
                 }}
               />
 
               <div className="space-y-5">
-                <ContactDetailsElement />
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label
+                      className="mb-1 block text-[#f8f0e3] text-[13px]"
+                      htmlFor="checkout-first-name"
+                    >
+                      First Name
+                    </label>
+                    <input
+                      autoComplete="given-name"
+                      className="w-full border border-[#f3eadb]/14 bg-[#050505] px-3 py-2.5 text-sm text-[#f8f0e3] outline-none transition focus:border-[#f8f0e3]/45"
+                      disabled={isBlocked}
+                      id="checkout-first-name"
+                      onChange={(event) => {
+                        debouncedFirstName(event.target.value);
+                        if (nameError) {
+                          setNameError(null);
+                        }
+                      }}
+                      value={firstName}
+                    />
+                  </div>
+                  <div>
+                    <label
+                      className="mb-1 block text-[#f8f0e3] text-[13px]"
+                      htmlFor="checkout-last-name"
+                    >
+                      Last Name
+                    </label>
+                    <input
+                      autoComplete="family-name"
+                      className="w-full border border-[#f3eadb]/14 bg-[#050505] px-3 py-2.5 text-sm text-[#f8f0e3] outline-none transition focus:border-[#f8f0e3]/45"
+                      disabled={isBlocked}
+                      id="checkout-last-name"
+                      onChange={(event) => {
+                        debouncedLastName(event.target.value);
+                        if (nameError) {
+                          setNameError(null);
+                        }
+                      }}
+                      value={lastName}
+                    />
+                  </div>
+                  {nameError ? (
+                    <p className="text-xs font-medium text-red-300 sm:col-span-2">
+                      {nameError}
+                    </p>
+                  ) : null}
+                </div>
+                <ContactDetailsElement
+                  onChange={(event) => {
+                    setContactEmail(event.complete ? event.value.email : null);
+                  }}
+                />
                 <PaymentElement
                   options={{
                     layout: {

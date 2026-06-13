@@ -15,7 +15,9 @@
     "@stripe/stripe-js": "^9.8.0",
     "@supabase/supabase-js": "^2.105.1",
     "@vercel/blob": "^2.4.0",
+    "i": "^0.3.7",
     "next": "16.2.4",
+    "npm": "^11.17.0",
     "pdfkit": "^0.18.0",
     "qrcode": "^1.5.4",
     "react": "19.2.4",
@@ -25,6 +27,7 @@
     "sharp": "^0.34.5",
     "stripe": "^22.1.0",
     "tailwind-merge": "^3.5.0",
+    "use-debounce": "^10.1.1",
     "zod": "^4.4.2"
   },
   "devDependencies": {
