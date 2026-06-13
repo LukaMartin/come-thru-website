@@ -285,7 +285,7 @@ begin
   select coalesce(sum(quantity), 0)::integer
   into requested_ticket_total
   from public.ticketing_order_items
-  where order_id = locked_order.id;
+  where ticketing_order_items.order_id = locked_order.id;
 
   select count(*)::integer
   into requested_ticket_count

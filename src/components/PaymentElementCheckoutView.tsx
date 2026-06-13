@@ -361,7 +361,13 @@ function CheckoutContent({
                 </p>
               </div>
 
-              <ExpressCheckoutElement onConfirm={confirmPayment} />
+              <ExpressCheckoutElement
+                onConfirm={confirmPayment}
+                options={{
+                  emailRequired: true,
+                  
+                }}
+              />
 
               <div className="space-y-5">
                 <ContactDetailsElement />
