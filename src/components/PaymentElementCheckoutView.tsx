@@ -7,6 +7,7 @@ import {
   useElements,
   useStripe,
   ContactDetailsElement,
+  ExpressCheckoutElement,
 } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { formatMoney } from "@/lib/tickets";
@@ -209,7 +210,7 @@ function CheckoutContent({
   }, [orderId, reservedUntil]);
 
   async function confirmPayment() {
-    if (!stripe || !elements || exitReason) {
+    if (!stripe || !elements || exitReason || isSubmitting) {
       return;
     }
 
@@ -360,6 +361,8 @@ function CheckoutContent({
                 </p>
               </div>
 
+              <ExpressCheckoutElement onConfirm={confirmPayment} />
+
               <div className="space-y-5">
                 <ContactDetailsElement />
                 <PaymentElement
@@ -367,7 +370,7 @@ function CheckoutContent({
                     layout: {
                       type: "accordion",
                       defaultCollapsed: false,
-                      radios: "if_multiple",
+                      radios: "always",
                       spacedAccordionItems: true,
                     },
                   }}
