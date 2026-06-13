@@ -139,15 +139,15 @@ export function CheckoutForm({ eventId, isFree, tickets }: CheckoutFormProps) {
       });
 
       const payload = (await response.json()) as {
-        url?: string;
+        checkoutPath?: string;
         error?: string;
       };
 
-      if (!response.ok || !payload.url) {
+      if (!response.ok || !payload.checkoutPath) {
         throw new Error(payload.error ?? "Unable to start checkout.");
       }
 
-      window.location.href = payload.url;
+      window.location.href = payload.checkoutPath;
     } catch (checkoutError) {
       setError(
         checkoutError instanceof Error

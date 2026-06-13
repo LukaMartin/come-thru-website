@@ -1,5 +1,5 @@
 export const MIN_QUANTITY_PER_TRANSACTION = 1;
-export const MAX_QUANTITY_PER_TRANSACTION = 20;
+export const MAX_QUANTITY_PER_TRANSACTION = 10;
 
 export type TicketOption = {
   id: string;

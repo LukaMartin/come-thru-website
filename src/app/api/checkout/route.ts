@@ -1,7 +1,5 @@
 import { z } from "zod";
 import type { Database } from "@/lib/database.types";
-import { getAppUrl } from "@/lib/env";
-import { getTicketCountsByType } from "@/lib/events";
 import { createOrderReference } from "@/lib/order-reference";
 import { createServiceClient } from "@/lib/supabase/server";
 import { createStripeClient } from "@/lib/stripe";
@@ -13,6 +11,14 @@ import {
 export const dynamic = "force-dynamic";
 
 type TicketType = Database["public"]["Tables"]["ticketing_ticket_types"]["Row"];
+type CheckoutReservationResult = {
+  order_id: string;
+  amount_total_cents: number;
+  currency: string;
+  reserved_until: string;
+};
+
+const RESERVATION_MINUTES = 10;
 
 const checkoutSchema = z.object({
   eventId: z.uuid(),
@@ -42,7 +48,19 @@ export async function POST(request: Request) {
   const supabase = createServiceClient();
   const stripe = createStripeClient();
   const { eventId, items } = parsed.data;
-  const itemIds = items.map((item) => item.ticketTypeId);
+  const aggregatedItems = aggregateItems(items);
+  const itemIds = aggregatedItems.map((item) => item.ticketTypeId);
+
+  if (
+    aggregatedItems.some((item) => item.quantity > MAX_QUANTITY_PER_TRANSACTION)
+  ) {
+    return Response.json(
+      { error: "Ticket quantity exceeds the transaction limit." },
+      { status: 400 },
+    );
+  }
+
+  await cancelExpiredReservations(supabase);
 
   const { data: event, error: eventError } = await supabase
     .from("ticketing_events")
@@ -75,8 +93,6 @@ export async function POST(request: Request) {
     );
   }
 
-  const now = Date.now();
-  const soldCounts = await getTicketCountsByType(itemIds, supabase);
   const lineItems: {
     ticketType: TicketType;
     quantity: number;
@@ -85,36 +101,13 @@ export async function POST(request: Request) {
     stripeCurrency: string;
   }[] = [];
 
-  for (const item of items) {
+  for (const item of aggregatedItems) {
     const ticketType = ticketTypes.find(
       (ticket) => ticket.id === item.ticketTypeId,
     );
 
     if (!ticketType) {
       throw new Error("Ticket type not found during checkout.");
-    }
-
-    const startsAt = ticketType.sales_start_at
-      ? new Date(ticketType.sales_start_at).getTime()
-      : null;
-    const endsAt = ticketType.sales_end_at
-      ? new Date(ticketType.sales_end_at).getTime()
-      : null;
-
-    if ((startsAt && now < startsAt) || (endsAt && now > endsAt)) {
-      return Response.json(
-        { error: `${ticketType.name} is not on sale.` },
-        { status: 400 },
-      );
-    }
-
-    const sold = soldCounts.get(ticketType.id) ?? 0;
-
-    if (sold + item.quantity > ticketType.capacity) {
-      return Response.json(
-        { error: `${ticketType.name} does not have enough tickets left.` },
-        { status: 400 },
-      );
     }
 
     const stripePriceId = ticketType.stripe_price_id?.trim();
@@ -146,10 +139,6 @@ export async function POST(request: Request) {
     });
   }
 
-  const amountTotal = lineItems.reduce(
-    (sum, item) => sum + item.stripeUnitAmount * item.quantity,
-    0,
-  );
   const currency = lineItems[0]?.stripeCurrency ?? "aud";
 
   if (lineItems.some((item) => item.stripeCurrency !== currency)) {
@@ -159,74 +148,124 @@ export async function POST(request: Request) {
     );
   }
 
-  const order = await createPendingOrder({
-    amountTotal,
-    currency,
-    eventId,
-    supabase,
-  });
+  let order: Awaited<ReturnType<typeof createReservation>>;
 
   try {
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      success_url: `${getAppUrl()}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${getAppUrl()}/tickets`,
-      customer_creation: "if_required",
-      client_reference_id: order.id,
+    order = await createReservation({
+      eventId,
+      lineItems,
+      supabase,
+    });
+  } catch (error) {
+    return Response.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Unable to reserve selected tickets.",
+      },
+      { status: 400 },
+    );
+  }
+
+  try {
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: order.amount_total_cents,
+      currency: order.currency,
+      automatic_payment_methods: {
+        enabled: true,
+        allow_redirects: "never",
+      },
       metadata: {
         order_id: order.id,
         event_id: eventId,
+        reserved_until: order.reserved_until,
       },
-      line_items: lineItems.map((item) => ({
-        price: item.stripePriceId,
-        quantity: item.quantity,
-      })),
     });
 
     const { error: updateError } = await supabase
       .from("ticketing_orders")
-      .update({ stripe_checkout_session_id: session.id })
+      .update({ stripe_payment_intent_id: paymentIntent.id })
       .eq("id", order.id);
 
     if (updateError) {
+      await stripe.paymentIntents.cancel(paymentIntent.id);
       throw updateError;
     }
 
-    return Response.json({ url: session.url });
+    if (!paymentIntent.client_secret) {
+      await stripe.paymentIntents.cancel(paymentIntent.id);
+      throw new Error("Stripe did not return a payment client secret.");
+    }
+
+    return Response.json({
+      clientSecret: paymentIntent.client_secret,
+      orderId: order.id,
+      reservedUntil: order.reserved_until,
+      checkoutPath: `/checkout/${order.id}`,
+    });
   } catch (error) {
-    await supabase
-      .from("ticketing_orders")
-      .update({ status: "failed" })
-      .eq("id", order.id);
+    await cancelCheckoutReservation(supabase, order.id, "failed");
     throw error;
   }
 }
 
-async function createPendingOrder({
-  amountTotal,
-  currency,
+function aggregateItems(items: z.infer<typeof checkoutSchema>["items"]) {
+  const quantities = new Map<string, number>();
+
+  for (const item of items) {
+    quantities.set(
+      item.ticketTypeId,
+      (quantities.get(item.ticketTypeId) ?? 0) + item.quantity,
+    );
+  }
+
+  return [...quantities.entries()].map(([ticketTypeId, quantity]) => ({
+    ticketTypeId,
+    quantity,
+  }));
+}
+
+async function createReservation({
   eventId,
+  lineItems,
   supabase,
 }: {
-  amountTotal: number;
-  currency: string;
   eventId: string;
+  lineItems: {
+    ticketType: TicketType;
+    quantity: number;
+    stripePriceId: string;
+    stripeUnitAmount: number;
+    stripeCurrency: string;
+  }[];
   supabase: ReturnType<typeof createServiceClient>;
 }) {
   for (let attempt = 0; attempt < 5; attempt += 1) {
     const { data, error } = await supabase
-      .from("ticketing_orders")
-      .insert({
-        event_id: eventId,
-        amount_total_cents: amountTotal,
-        currency,
-        order_reference: createOrderReference(),
+      .rpc("ticketing_create_checkout_reservation", {
+        p_event_id: eventId,
+        p_order_reference: createOrderReference(),
+        p_items: lineItems.map((item) => ({
+          ticket_type_id: item.ticketType.id,
+          quantity: item.quantity,
+          stripe_price_id: item.stripePriceId,
+          unit_amount_cents: item.stripeUnitAmount,
+          currency: item.stripeCurrency,
+        })),
+        p_reservation_minutes: RESERVATION_MINUTES,
       })
-      .select()
       .single();
 
     if (!error) {
-      return data;
+      const reservation = data as CheckoutReservationResult;
+
+      return {
+        id: reservation.order_id,
+        amount_total_cents: reservation.amount_total_cents,
+        currency: reservation.currency,
+        reserved_until: reservation.reserved_until,
+      };
     }
 
     if (error.code !== "23505") {
@@ -235,4 +274,39 @@ async function createPendingOrder({
   }
 
   throw new Error("Could not create a unique order reference.");
+}
+
+async function cancelExpiredReservations(
+  supabase: ReturnType<typeof createServiceClient>,
+) {
+  const { error } = await supabase.rpc(
+    "ticketing_cancel_expired_reservations",
+    {
+      p_limit: 100,
+      p_now: new Date().toISOString(),
+    },
+  );
+
+  if (error) {
+    throw error;
+  }
+}
+
+async function cancelCheckoutReservation(
+  supabase: ReturnType<typeof createServiceClient>,
+  orderId: string,
+  reason: "cancelled" | "failed" = "cancelled",
+) {
+  const { error } = await supabase.rpc(
+    "ticketing_cancel_checkout_reservation",
+    {
+      p_order_id: orderId,
+      p_reason: reason,
+      p_stripe_checkout_session_id: null,
+    },
+  );
+
+  if (error) {
+    throw error;
+  }
 }

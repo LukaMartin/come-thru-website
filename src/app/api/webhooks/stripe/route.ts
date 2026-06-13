@@ -5,8 +5,8 @@ import { requireEnv } from "@/lib/env";
 import { createServiceClient } from "@/lib/supabase/server";
 import { createStripeClient } from "@/lib/stripe";
 import {
-  createTicketQrDataUrl,
   createTicketCode,
+  createTicketQrDataUrl,
   createTicketSecret,
   getTicketUrl,
   hashTicketSecret,
@@ -16,6 +16,7 @@ import * as Sentry from "@sentry/nextjs";
 export const dynamic = "force-dynamic";
 
 type TicketType = Database["public"]["Tables"]["ticketing_ticket_types"]["Row"];
+type OrderItem = Database["public"]["Tables"]["ticketing_order_items"]["Row"];
 
 type FulfilledTicket = {
   id: string;
@@ -67,20 +68,64 @@ export async function POST(request: Request) {
     return Response.json({ error: message }, { status: 400 });
   }
 
-  if (event.type === "checkout.session.completed") {
-    const fulfillment = await handleCheckoutCompleted(
+  if (event.type === "payment_intent.succeeded") {
+    const fulfillment = await handlePaymentIntentSucceeded(
       event.id,
       event.type,
-      event.data.object as Stripe.Checkout.Session,
+      event.data.object as Stripe.PaymentIntent,
       stripe,
     );
 
     return Response.json({ received: true, ...fulfillment });
   }
 
+  if (
+    event.type === "payment_intent.payment_failed" ||
+    event.type === "payment_intent.canceled"
+  ) {
+    const cancellation = await handlePaymentIntentStopped(
+      event.id,
+      event.type,
+      event.data.object as Stripe.PaymentIntent,
+    );
+
+    return Response.json({ received: true, ...cancellation });
+  }
+
   const duplicate = await recordWebhookEvent(event.id, event.type);
 
   return Response.json({ received: true, duplicate });
+}
+
+async function handlePaymentIntentStopped(
+  webhookEventId: string,
+  webhookEventType: string,
+  paymentIntent: Stripe.PaymentIntent,
+) {
+  const duplicate = await recordWebhookEvent(webhookEventId, webhookEventType);
+
+  if (duplicate) {
+    return { duplicate };
+  }
+
+  const orderId = paymentIntent.metadata.order_id;
+
+  if (!orderId) {
+    return { duplicate, cancelled: false };
+  }
+
+  const supabase = createServiceClient();
+  const { error } = await supabase.rpc("ticketing_cancel_checkout_reservation", {
+    p_order_id: orderId,
+    p_reason: paymentIntent.status === "canceled" ? "cancelled" : "failed",
+    p_stripe_checkout_session_id: null,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return { duplicate, cancelled: true };
 }
 
 async function recordWebhookEvent(eventId: string, eventType: string) {
@@ -105,23 +150,24 @@ async function recordWebhookEvent(eventId: string, eventType: string) {
   return !data;
 }
 
-async function handleCheckoutCompleted(
+async function handlePaymentIntentSucceeded(
   webhookEventId: string,
   webhookEventType: string,
-  session: Stripe.Checkout.Session,
+  paymentIntent: Stripe.PaymentIntent,
   stripeClient?: ReturnType<typeof createStripeClient>,
 ) {
-  const orderId = session.metadata?.order_id ?? session.client_reference_id;
+  const orderId = paymentIntent.metadata.order_id;
 
   if (!orderId) {
-    throw new Error("Stripe session is missing order_id metadata.");
+    throw new Error("PaymentIntent is missing order_id metadata.");
   }
 
   const stripe = stripeClient ?? createStripeClient();
   const supabase = createServiceClient();
-  const buyerEmail =
-    session.customer_details?.email ?? session.customer_email ?? null;
-  const buyerName = session.customer_details?.name ?? null;
+  const { email: buyerEmail, name: buyerName } = await getPaymentBuyerDetails(
+    stripe,
+    paymentIntent,
+  );
 
   const { data: order, error: orderError } = await supabase
     .from("ticketing_orders")
@@ -133,86 +179,51 @@ async function handleCheckoutCompleted(
     throw orderError;
   }
 
-  if (order.stripe_checkout_session_id !== session.id) {
-    throw new Error("Stripe session does not match the order.");
+  if (order.stripe_payment_intent_id !== paymentIntent.id) {
+    throw new Error("Stripe payment intent does not match the order.");
   }
 
-  if (order.status !== "pending" && order.status !== "paid") {
-    throw new Error(`Order cannot be fulfilled from status ${order.status}.`);
+  if (paymentIntent.status !== "succeeded") {
+    throw new Error("Stripe payment intent is not succeeded.");
   }
 
-  if (session.payment_status !== "paid") {
-    throw new Error("Stripe session is not paid.");
+  if (paymentIntent.amount_received !== order.amount_total_cents) {
+    throw new Error("Stripe payment amount does not match the pending order.");
   }
 
-  if (
-    session.amount_total !== null &&
-    session.amount_total !== order.amount_total_cents
-  ) {
-    throw new Error("Stripe session amount does not match the pending order.");
+  if (paymentIntent.currency.toLowerCase() !== order.currency.toLowerCase()) {
+    throw new Error("Stripe payment currency does not match the pending order.");
   }
 
-  if (
-    session.currency &&
-    session.currency.toLowerCase() !== order.currency.toLowerCase()
-  ) {
-    throw new Error(
-      "Stripe session currency does not match the pending order.",
-    );
+  const { data: reservedOrderItems, error: orderItemsError } = await supabase
+    .from("ticketing_order_items")
+    .select("*")
+    .eq("order_id", order.id);
+
+  if (orderItemsError) {
+    throw orderItemsError;
   }
 
-  const stripeLineItems = await stripe.checkout.sessions.listLineItems(
-    session.id,
-    {
-      limit: 100,
-    },
-  );
-  const stripePriceIds = [
-    ...new Set(
-      stripeLineItems.data
-        .map((item) => item.price?.id)
-        .filter((priceId): priceId is string => Boolean(priceId)),
-    ),
+  const orderItems = (reservedOrderItems ?? []) as OrderItem[];
+  const ticketTypeIds = [
+    ...new Set(orderItems.map((item) => item.ticket_type_id)),
   ];
 
-  if (stripePriceIds.length === 0) {
-    throw new Error("Stripe session has no line item price IDs.");
+  if (ticketTypeIds.length === 0) {
+    throw new Error("Checkout reservation has no order items.");
   }
 
-  const { data: stripeTicketTypes, error: stripeTicketTypesError } =
-    await supabase
-      .from("ticketing_ticket_types")
-      .select("*")
-      .eq("event_id", order.event_id)
-      .in("stripe_price_id", stripePriceIds);
+  const { data: orderTicketTypes, error: ticketTypesError } = await supabase
+    .from("ticketing_ticket_types")
+    .select("*")
+    .eq("event_id", order.event_id)
+    .in("id", ticketTypeIds);
 
-  if (stripeTicketTypesError) {
-    throw stripeTicketTypesError;
+  if (ticketTypesError) {
+    throw ticketTypesError;
   }
 
-  const ticketTypes = (stripeTicketTypes ?? []) as TicketType[];
-
-  const ticketTypeByStripePriceId = new Map(
-    ticketTypes.map((ticket) => [ticket.stripe_price_id, ticket]),
-  );
-
-  const orderItems = stripeLineItems.data.map((item) => {
-    const priceId = item.price?.id;
-    const ticketType = priceId ? ticketTypeByStripePriceId.get(priceId) : null;
-
-    if (!ticketType) {
-      throw new Error(
-        `No ticket type found for Stripe price ${priceId ?? "unknown"}.`,
-      );
-    }
-
-    return {
-      ticket_type_id: ticketType.id,
-      quantity: item.quantity ?? 1,
-      unit_amount_cents: item.price?.unit_amount ?? ticketType.price_cents,
-    };
-  });
-
+  const ticketTypes = (orderTicketTypes ?? []) as TicketType[];
   const ticketTypeById = new Map(
     ticketTypes.map((ticket) => [ticket.id, ticket]),
   );
@@ -240,21 +251,16 @@ async function handleCheckoutCompleted(
   );
 
   const { data: rawFulfillment, error: fulfillmentError } = await supabase
-    .rpc("ticketing_fulfill_checkout_session", {
+    .rpc("ticketing_fulfill_payment_intent", {
       p_webhook_event_id: webhookEventId,
       p_webhook_event_type: webhookEventType,
       p_order_id: order.id,
-      p_stripe_checkout_session_id: session.id,
-      p_stripe_payment_intent_id:
-        typeof session.payment_intent === "string"
-          ? session.payment_intent
-          : null,
-      p_payment_status: session.payment_status,
-      p_amount_total_cents: session.amount_total,
-      p_currency: session.currency,
+      p_stripe_payment_intent_id: paymentIntent.id,
+      p_payment_status: paymentIntent.status,
+      p_amount_total_cents: paymentIntent.amount_received,
+      p_currency: paymentIntent.currency,
       p_buyer_email: buyerEmail,
       p_buyer_name: buyerName,
-      p_order_items: orderItems,
       p_tickets: pendingTickets.map((ticket) => ({
         ticket_type_id: ticket.ticket_type_id,
         ticket_code: ticket.ticket_code,
@@ -270,11 +276,29 @@ async function handleCheckoutCompleted(
   }
 
   if (!rawFulfillment) {
-    throw new Error("Checkout fulfillment did not return a result.");
+    throw new Error("Payment fulfillment did not return a result.");
   }
 
   const fulfillment = rawFulfillment as FulfillmentResult;
   const fulfilledTickets = (fulfillment.tickets ?? []) as FulfilledTicket[];
+
+  if (fulfillment.failure_reason === "reservation_expired") {
+    await refundPaymentIntent(
+      stripe,
+      paymentIntent.id,
+      order.id,
+      "reservation_expired",
+    );
+  }
+
+  if (fulfillment.capacity_exceeded) {
+    await refundPaymentIntent(
+      stripe,
+      paymentIntent.id,
+      order.id,
+      "capacity_exceeded",
+    );
+  }
 
   if (fulfilledTickets.length > 0) {
     if (!buyerEmail) {
@@ -329,8 +353,8 @@ async function handleCheckoutCompleted(
               "app.area": "stripe_webhook",
               "email.delivery_status": "failed",
               "order.id": order.id,
-              "stripe.checkout_session_id": session.id,
               "stripe.event_type": webhookEventType,
+              "stripe.payment_intent_id": paymentIntent.id,
               "stripe.webhook_event_id": webhookEventId,
             },
           });
@@ -347,6 +371,55 @@ async function handleCheckoutCompleted(
     capacityExceeded: fulfillment.capacity_exceeded,
     failureReason: fulfillment.failure_reason,
   };
+}
+
+async function getPaymentBuyerDetails(
+  stripe: ReturnType<typeof createStripeClient>,
+  paymentIntent: Stripe.PaymentIntent,
+) {
+  const latestCharge = paymentIntent.latest_charge;
+
+  if (typeof latestCharge === "string") {
+    const charge = await stripe.charges.retrieve(latestCharge);
+
+    return {
+      email: charge.billing_details.email ?? paymentIntent.receipt_email ?? null,
+      name: charge.billing_details.name ?? null,
+    };
+  }
+
+  if (latestCharge && typeof latestCharge !== "string") {
+    return {
+      email:
+        latestCharge.billing_details.email ?? paymentIntent.receipt_email ?? null,
+      name: latestCharge.billing_details.name ?? null,
+    };
+  }
+
+  return {
+    email: paymentIntent.receipt_email ?? null,
+    name: null,
+  };
+}
+
+async function refundPaymentIntent(
+  stripe: ReturnType<typeof createStripeClient>,
+  paymentIntentId: string,
+  orderId: string,
+  reason: "reservation_expired" | "capacity_exceeded",
+) {
+  await stripe.refunds.create(
+    {
+      payment_intent: paymentIntentId,
+      metadata: {
+        order_id: orderId,
+        reason,
+      },
+    },
+    {
+      idempotencyKey: `ticketing-${orderId}-${reason}`,
+    },
+  );
 }
 
 async function markTicketEmailDelivery(

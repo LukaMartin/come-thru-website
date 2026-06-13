@@ -95,6 +95,8 @@ export type Database = {
           ticket_email_sent_at: string | null;
           ticket_email_failed_at: string | null;
           ticket_email_error: string | null;
+          reserved_until: string | null;
+          reservation_released_at: string | null;
           created_at: string;
         };
         Insert: {
@@ -112,6 +114,8 @@ export type Database = {
           ticket_email_sent_at?: string | null;
           ticket_email_failed_at?: string | null;
           ticket_email_error?: string | null;
+          reserved_until?: string | null;
+          reservation_released_at?: string | null;
           created_at?: string;
         };
         Update: Partial<
@@ -212,6 +216,23 @@ export type Database = {
           Database["public"]["Tables"]["ticketing_webhook_events"]["Insert"]
         >;
       };
+      ticketing_ticket_email_secrets: {
+        Row: {
+          ticket_id: string;
+          order_id: string;
+          ticket_secret: string;
+          created_at: string;
+        };
+        Insert: {
+          ticket_id: string;
+          order_id: string;
+          ticket_secret: string;
+          created_at?: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["ticketing_ticket_email_secrets"]["Insert"]
+        >;
+      };
       admin_users: {
         Row: {
           user_id: string;
@@ -273,6 +294,43 @@ export type Database = {
       };
     };
     Functions: {
+      ticketing_cancel_checkout_reservation: {
+        Args: {
+          p_order_id?: string | null;
+          p_stripe_checkout_session_id?: string | null;
+          p_reason?: string | null;
+        };
+        Returns: {
+          order_id: string;
+          stripe_checkout_session_id: string | null;
+        }[];
+      };
+      ticketing_cancel_expired_reservations: {
+        Args: {
+          p_now?: string;
+          p_limit?: number;
+        };
+        Returns: {
+          order_id: string;
+          stripe_checkout_session_id: string | null;
+        }[];
+      };
+      ticketing_create_checkout_reservation: {
+        Args: {
+          p_event_id: string;
+          p_order_reference: string;
+          p_items: Json;
+          p_reservation_minutes?: number;
+        };
+        Returns: {
+          order_id: string;
+          order_reference: string;
+          amount_total_cents: number;
+          currency: string;
+          reserved_until: string;
+          line_items: Json;
+        }[];
+      };
       ticketing_fulfill_checkout_session: {
         Args: {
           p_webhook_event_id: string;
@@ -285,7 +343,38 @@ export type Database = {
           p_currency: string | null;
           p_buyer_email: string | null;
           p_buyer_name: string | null;
-          p_order_items: Json;
+          p_tickets: Json;
+        };
+        Returns: {
+          processed: boolean;
+          duplicate: boolean;
+          capacity_exceeded: boolean;
+          failure_reason: string | null;
+          order_id: string | null;
+          event_id: string | null;
+          event_name: string | null;
+          venue: string | null;
+          venue_address: string | null;
+          starts_at: string | null;
+          ends_at: string | null;
+          order_reference: string | null;
+          order_total_cents: number | null;
+          order_currency: string | null;
+          ticket_email_status: "pending" | "sent" | "failed" | "skipped" | null;
+          tickets: Json;
+        }[];
+      };
+      ticketing_fulfill_payment_intent: {
+        Args: {
+          p_webhook_event_id: string;
+          p_webhook_event_type: string;
+          p_order_id: string;
+          p_stripe_payment_intent_id: string;
+          p_payment_status: string;
+          p_amount_total_cents: number | null;
+          p_currency: string | null;
+          p_buyer_email: string | null;
+          p_buyer_name: string | null;
           p_tickets: Json;
         };
         Returns: {

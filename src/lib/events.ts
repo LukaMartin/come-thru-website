@@ -51,23 +51,52 @@ export async function getTicketCountsByType(
   }
 
   const supabase = supabaseClient ?? createServiceClient();
-  const { data, error } = await supabase
+  const { data: tickets, error: ticketsError } = await supabase
     .from("ticketing_tickets")
     .select("ticket_type_id")
     .in("ticket_type_id", ticketTypeIds)
     .in("status", ["valid", "redeemed"]);
 
-  if (error) {
-    throw error;
+  if (ticketsError) {
+    throw ticketsError;
   }
 
-  return (data ?? []).reduce((counts, ticket) => {
-    counts.set(
+  const counts = (tickets ?? []).reduce((ticketCounts, ticket) => {
+    ticketCounts.set(
       ticket.ticket_type_id,
-      (counts.get(ticket.ticket_type_id) ?? 0) + 1,
+      (ticketCounts.get(ticket.ticket_type_id) ?? 0) + 1,
     );
-    return counts;
+    return ticketCounts;
   }, new Map<string, number>());
+
+  const { data: reservations, error: reservationsError } = await supabase
+    .from("ticketing_order_items")
+    .select(
+      `
+      ticket_type_id,
+      quantity,
+      ticketing_orders!inner (
+        status,
+        reserved_until
+      )
+    `,
+    )
+    .in("ticket_type_id", ticketTypeIds)
+    .eq("ticketing_orders.status", "pending")
+    .gt("ticketing_orders.reserved_until", new Date().toISOString());
+
+  if (reservationsError) {
+    throw reservationsError;
+  }
+
+  for (const reservation of reservations ?? []) {
+    counts.set(
+      reservation.ticket_type_id,
+      (counts.get(reservation.ticket_type_id) ?? 0) + reservation.quantity,
+    );
+  }
+
+  return counts;
 }
 
 export async function getLineupArtistsByEventId(eventId: string) {
