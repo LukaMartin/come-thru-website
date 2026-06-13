@@ -418,8 +418,8 @@ function CheckoutExitModal({ reason }: { reason: CheckoutExitReason }) {
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-5 backdrop-blur-sm"
       role="dialog"
     >
-      <div className="relative w-full max-w-lg overflow-hidden border border-[#f3eadb]/16 bg-[radial-gradient(circle_at_18%_18%,rgba(172,67,43,0.34),transparent_34%),radial-gradient(circle_at_82%_22%,rgba(215,199,173,0.14),transparent_28%),rgba(13,9,8,0.98)] p-6 text-center shadow-2xl shadow-black/50 md:p-8">
-        <p className="text-[0.75rem] uppercase tracking-[0.45em] text-[#d7c7ad]">
+      <div className="bg-[#070605] relative w-full max-w-lg overflow-hidden border border-[#f3eadb]/16 p-6 text-center shadow-2xl shadow-black/50 md:p-8">
+        <p className="text-[0.8rem] uppercase tracking-[0.45em] text-[#d7c7ad]">
           {copy.title}
         </p>
         <p className="mx-auto mt-5 max-w-sm text-sm leading-6 text-[#f3eadb]/68 md:text-base md:leading-7">
@@ -427,7 +427,7 @@ function CheckoutExitModal({ reason }: { reason: CheckoutExitReason }) {
         </p>
         <a
           href="/tickets?view=tickets"
-          className="mt-7 inline-flex items-center justify-center rounded-md bg-[#f8f0e3] px-6 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-black transition duration-300 hover:bg-white"
+          className="mt-7 inline-flex items-center justify-center rounded-md bg-[#f8f0e3] px-6 py-3 text-sm font-semibold uppercase tracking-widest text-black transition duration-300 hover:bg-white"
         >
           Start new checkout
         </a>
