@@ -18,7 +18,8 @@ import logoCream from "../../public/logo-cream.png";
 import Image from "next/image";
 import Link from "next/link";
 import * as Sentry from "@sentry/nextjs";
-import { useDebounce, useDebouncedCallback } from "use-debounce";
+import { PiTimerBold } from "react-icons/pi";
+import { twMerge } from "tailwind-merge";
 
 type CheckoutExitReason = "expired" | "unavailable";
 
@@ -146,13 +147,6 @@ function CheckoutContent({
   const [lastName, setLastName] = useState("");
   const [nameError, setNameError] = useState<string | null>(null);
 
-  const debouncedFirstName = useDebouncedCallback((value: string) => {
-    setFirstName(value);
-  }, 600);
-  const debouncedLastName = useDebouncedCallback((value: string) => {
-    setLastName(value);
-  }, 600);
-
   useEffect(() => {
     let cancelled = false;
 
@@ -234,6 +228,15 @@ function CheckoutContent({
 
     const email = event?.billingDetails?.email ?? contactEmail;
     const name = event?.billingDetails?.name ?? buyerName;
+
+    try {
+      await fetch(`/api/checkout/update`, {
+        method: "POST",
+        body: JSON.stringify({ orderId, email }),
+      });
+    } catch (error) {
+      Sentry.captureException(error);
+    }
 
     setIsSubmitting(true);
 
@@ -341,9 +344,19 @@ function CheckoutContent({
                 <p className="text-[0.68rem] uppercase tracking-[0.45em] text-[#d7c7ad]">
                   Order summary
                 </p>
-                <p className="shrink-0 text-lg md:text-2xl font-black leading-none tracking-[-0.06em]">
-                  {remainingTime ?? "--:--"}
-                </p>
+                <div
+                  className={twMerge(
+                    "flex items-center justify-between w-15 md:w-20",
+                    remainingTime &&
+                      remainingTime.length > 4 &&
+                      "w-[66px] md:w-22",
+                  )}
+                >
+                  <PiTimerBold className="size-4 md:size-5 text-[#f8f0e3]" />
+                  <p className="shrink-0 text-lg md:text-2xl font-black leading-none tracking-[-0.06em]">
+                    {remainingTime ?? "--:--"}
+                  </p>
+                </div>
               </div>
 
               <div className="mt-5 border-t border-[#f3eadb]/12 pt-5">
@@ -421,7 +434,7 @@ function CheckoutContent({
                       disabled={isBlocked}
                       id="checkout-first-name"
                       onChange={(event) => {
-                        debouncedFirstName(event.target.value);
+                        setFirstName(event.target.value);
                         if (nameError) {
                           setNameError(null);
                         }
@@ -442,7 +455,7 @@ function CheckoutContent({
                       disabled={isBlocked}
                       id="checkout-last-name"
                       onChange={(event) => {
-                        debouncedLastName(event.target.value);
+                        setLastName(event.target.value);
                         if (nameError) {
                           setNameError(null);
                         }
