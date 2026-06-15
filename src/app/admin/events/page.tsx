@@ -58,20 +58,20 @@ export default async function AdminEventsPage() {
           <div className="flex flex-wrap gap-3">
             <Link
               href="/admin/gallery"
-              className="rounded-full border border-[#f3eadb]/18 px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-[#f8f0e3] transition hover:bg-[#f3eadb]/10"
+              className="rounded-md border border-[#f3eadb]/18 px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-[#f8f0e3] transition hover:bg-[#f3eadb]/10"
             >
               Gallery
             </Link>
             <Link
               href="/admin/events/new"
-              className="rounded-full bg-[#f8f0e3] px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-white"
+              className="rounded-md bg-[#f8f0e3] px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-white"
             >
               New event
             </Link>
             <form action={logoutAdminAction}>
               <button
                 type="submit"
-                className="rounded-full border border-[#f3eadb]/18 px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-[#f8f0e3] transition hover:bg-[#f3eadb]/10"
+                className="rounded-md border border-[#f3eadb]/18 px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-[#f8f0e3] transition hover:bg-[#f3eadb]/10"
               >
                 Log out
               </button>

@@ -82,7 +82,7 @@ export function AdminLineupArtistsForm({
       <button
         type="submit"
         disabled={isPending}
-        className="w-fit rounded-full bg-[#f8f0e3] px-6 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-white disabled:opacity-60"
+        className="w-fit rounded-md bg-[#f8f0e3] px-6 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-white disabled:opacity-60"
       >
         {isPending ? "Saving..." : "Save lineup"}
       </button>

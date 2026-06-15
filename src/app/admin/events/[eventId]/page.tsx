@@ -115,7 +115,7 @@ export default async function AdminEventPage({ params }: AdminEventPageProps) {
               </label>
               <button
                 type="submit"
-                className="rounded-full bg-[#f8f0e3] px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-white"
+                className="rounded-md bg-[#f8f0e3] px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-white"
               >
                 Publish as current
               </button>
@@ -124,7 +124,7 @@ export default async function AdminEventPage({ params }: AdminEventPageProps) {
               <input type="hidden" name="eventId" value={event.id} />
               <button
                 type="submit"
-                className="w-full rounded-full border border-[#f3eadb]/18 px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-[#f8f0e3] transition hover:bg-[#f3eadb]/10"
+                className="w-full rounded-md border border-[#f3eadb]/18 px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-[#f8f0e3] transition hover:bg-[#f3eadb]/10"
               >
                 Archive event
               </button>

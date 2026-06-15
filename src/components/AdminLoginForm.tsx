@@ -39,7 +39,7 @@ export function AdminLoginForm() {
       <button
         type="submit"
         disabled={isPending}
-        className="mt-2 rounded-full bg-[#f8f0e3] px-6 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-white disabled:opacity-60"
+        className="mt-2 rounded-md bg-[#f8f0e3] px-6 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-white disabled:opacity-60"
       >
         {isPending ? "Signing in..." : "Sign in"}
       </button>

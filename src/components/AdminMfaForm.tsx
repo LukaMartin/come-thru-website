@@ -47,7 +47,7 @@ export function AdminMfaForm({ initialFactorId }: AdminMfaFormProps) {
           <button
             type="submit"
             disabled={isEnrolling}
-            className="rounded-full bg-[#f8f0e3] px-6 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-white disabled:opacity-60"
+            className="rounded-md bg-[#f8f0e3] px-6 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-white disabled:opacity-60"
           >
             {isEnrolling ? "Creating factor..." : "Set up authenticator"}
           </button>
@@ -107,7 +107,7 @@ export function AdminMfaForm({ initialFactorId }: AdminMfaFormProps) {
           <button
             type="submit"
             disabled={isVerifying}
-            className="rounded-full bg-[#f8f0e3] px-6 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-white disabled:opacity-60"
+            className="rounded-md bg-[#f8f0e3] px-6 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-white disabled:opacity-60"
           >
             {isVerifying ? "Verifying..." : "Verify and continue"}
           </button>

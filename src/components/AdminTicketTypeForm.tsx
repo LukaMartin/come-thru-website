@@ -159,7 +159,7 @@ export function AdminTicketTypeForm({
       <button
         type="submit"
         disabled={isPending}
-        className="w-fit rounded-full border border-[#f3eadb]/18 px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-[#f8f0e3] transition hover:bg-[#f3eadb]/10 disabled:opacity-60"
+        className="w-fit rounded-md border border-[#f3eadb]/18 px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-[#f8f0e3] transition hover:bg-[#f3eadb]/10 disabled:opacity-60"
       >
         {isPending
           ? "Saving..."
