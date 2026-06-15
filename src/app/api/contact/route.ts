@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 const contactSchema = z.object({
   name: z.string().trim().min(1, "Name is required.").max(120),
-  email: z.string().trim().email("Enter a valid email address.").max(254),
+  email: z.email("Enter a valid email address.").max(254),
   subject: z.string().trim().min(1, "Subject is required.").max(160),
   message: z
     .string()
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
       },
     });
     return Response.json(
-      { error: "Unable to send your message right now." },
+      { error: "Unable to send your message." },
       { status: 500 },
     );
   }
