@@ -96,8 +96,10 @@ export function CheckoutForm({ eventId, isFree, tickets }: CheckoutFormProps) {
     };
   }, [tickets]);
   const isSaleActive =
-    (saleWindow.startsAt !== null && currentTime >= saleWindow.startsAt) &&
-    (saleWindow.endsAt !== null && currentTime <= saleWindow.endsAt);
+    saleWindow.startsAt !== null &&
+    currentTime >= saleWindow.startsAt &&
+    saleWindow.endsAt !== null &&
+    currentTime <= saleWindow.endsAt;
 
   useEffect(() => {
     const nextBoundary = [saleWindow.startsAt, saleWindow.endsAt]
@@ -209,6 +211,11 @@ export function CheckoutForm({ eventId, isFree, tickets }: CheckoutFormProps) {
                     <p className="text-sm font-medium text-[#d7c7ad]">
                       {formatMoney(ticket.price_cents, ticket.currency)}
                     </p>
+                    {remaining < 20 && !isTicketSoldOut ? (
+                      <span className="rounded-full border border-red-300/20 bg-red-400/10 px-2 py-0.5 text-[0.55rem] font-semibold uppercase tracking-[0.18em] text-red-200">
+                        Only {remaining} left
+                      </span>
+                    ) : null}
                     {isTicketSoldOut ? (
                       <span className="rounded-full border border-red-300/20 bg-red-400/10 px-2 py-0.5 text-[0.55rem] font-semibold uppercase tracking-[0.18em] text-red-200">
                         Sold out
