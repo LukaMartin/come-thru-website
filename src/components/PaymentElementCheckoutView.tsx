@@ -16,12 +16,13 @@ import {
 import { formatMoney } from "@/lib/tickets";
 import logoCream from "../../public/logo-cream.png";
 import Image from "next/image";
-import Link from "next/link";
 import * as Sentry from "@sentry/nextjs";
 import { PiTimerBold } from "react-icons/pi";
 import { twMerge } from "tailwind-merge";
-
-type CheckoutExitReason = "expired" | "unavailable";
+import { CheckoutExitReason } from "@/lib/checkout";
+import CheckoutExitModal from "./CheckoutExitModal";
+import { cancelCheckoutReservationClient } from "@/lib/checkout";
+import { useRouter } from "next/navigation";
 
 type CheckoutStatusResponse = {
   expired?: boolean;
@@ -137,6 +138,7 @@ function CheckoutContent({
   orderId,
   reservedUntil,
 }: Omit<PaymentElementCheckoutViewProps, "clientSecret" | "publishableKey">) {
+  const router = useRouter();
   const stripe = useStripe();
   const elements = useElements();
   const [remainingTime, setRemainingTime] = useState<string | null>(null);
@@ -151,6 +153,10 @@ function CheckoutContent({
     let cancelled = false;
 
     async function checkReservationStatus() {
+      if (isSubmitting) {
+        return;
+      }
+
       try {
         const response = await fetch(
           `/api/checkout/status?orderId=${encodeURIComponent(orderId)}`,
@@ -216,7 +222,7 @@ function CheckoutContent({
       window.removeEventListener("focus", checkReservationStatus);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [orderId, reservedUntil]);
+  }, [orderId, reservedUntil, isSubmitting]);
 
   async function confirmPayment(
     event?: StripeExpressCheckoutElementConfirmEvent,
@@ -229,6 +235,8 @@ function CheckoutContent({
     const email = event?.billingDetails?.email ?? contactEmail;
     const name = event?.billingDetails?.name ?? buyerName;
 
+    setIsSubmitting(true);
+
     try {
       await fetch(`/api/checkout/update`, {
         method: "POST",
@@ -237,8 +245,6 @@ function CheckoutContent({
     } catch (error) {
       Sentry.captureException(error);
     }
-
-    setIsSubmitting(true);
 
     const { error, paymentIntent } = await stripe.confirmPayment({
       elements,
@@ -283,32 +289,6 @@ function CheckoutContent({
     await confirmPayment(undefined, `${trimmedFirstName} ${trimmedLastName}`);
   }
 
-  async function cancelCheckoutReservation() {
-    try {
-      const response = await fetch(`/api/checkout/expire`, {
-        cache: "no-store",
-        method: "POST",
-        body: JSON.stringify({ orderId }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to cancel checkout reservation");
-      }
-
-      const payload = (await response.json()) as {
-        cancelled: boolean;
-      };
-
-      if (!payload.cancelled) {
-        throw new Error("Failed to cancel checkout reservation");
-      }
-
-      window.location.href = "/tickets";
-    } catch (error) {
-      Sentry.captureException(error);
-    }
-  }
-
   const isBlocked = Boolean(exitReason) || isSubmitting;
 
   return (
@@ -324,16 +304,19 @@ function CheckoutContent({
             priority
             className="h-10 w-auto opacity-90 sm:h-12"
           />
-          <Link
-            onClick={() => cancelCheckoutReservation()}
-            href="/tickets"
+          <button
+            onClick={async (e) => {
+              e.preventDefault();
+              await cancelCheckoutReservationClient(orderId);
+              router.push("/tickets?view=tickets");
+            }}
             className="group relative flex w-fit items-center gap-1.5 pb-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#d7c7ad] transition-colors duration-300 hover:text-[#f8f0e3] after:absolute after:bottom-0 after:right-0 after:h-px after:w-[calc(100%-1.25rem)] after:bg-current after:transition-all after:duration-400 after:ease-out hover:after:w-full"
           >
             <span className="hover:-mr-5 opacity-0 transition-all duration-300 ease-out group-hover:mr-0 group-hover:opacity-100">
               &larr;
             </span>
             <span>Back to tickets</span>
-          </Link>
+          </button>
         </div>
 
         <div className="grid gap-5">
@@ -502,45 +485,9 @@ function CheckoutContent({
         </div>
       </div>
 
-      {exitReason ? <CheckoutExitModal reason={exitReason} /> : null}
+      {exitReason && !isSubmitting ? (
+        <CheckoutExitModal reason={exitReason} orderId={orderId} />
+      ) : null}
     </main>
-  );
-}
-
-function CheckoutExitModal({ reason }: { reason: CheckoutExitReason }) {
-  const copy =
-    reason === "unavailable"
-      ? {
-          title: "Checkout unavailable",
-          message:
-            "This checkout is no longer available. Please start again to purchase tickets.",
-        }
-      : {
-          title: "Reservation expired",
-          message:
-            "Your 10 minute ticket reservation has ended. Please start again to purchase tickets.",
-        };
-
-  return (
-    <div
-      aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-5 backdrop-blur-sm"
-      role="dialog"
-    >
-      <div className="bg-[#070605] relative w-full max-w-lg overflow-hidden border border-[#f3eadb]/16 p-6 text-center shadow-2xl shadow-black/50 md:p-8">
-        <p className="text-[0.8rem] uppercase tracking-[0.45em] text-[#d7c7ad]">
-          {copy.title}
-        </p>
-        <p className="mx-auto mt-5 max-w-sm text-sm leading-6 text-[#f3eadb]/68 md:text-base md:leading-7">
-          {copy.message}
-        </p>
-        <a
-          href="/tickets?view=tickets"
-          className="mt-7 inline-flex items-center justify-center rounded-md bg-[#f8f0e3] px-6 py-3 text-sm font-semibold uppercase tracking-widest text-black transition duration-300 hover:bg-white"
-        >
-          Start new checkout
-        </a>
-      </div>
-    </div>
   );
 }
