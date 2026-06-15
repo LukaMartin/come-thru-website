@@ -10,6 +10,7 @@ create table public.ticketing_events (
   starts_at timestamptz not null,
   ends_at timestamptz,
   hero_image_url text,
+  ticket_colours text,
   is_current boolean not null default false,
   is_free boolean not null default false,
   status text not null default 'draft' check (status in ('draft', 'published', 'archived')),

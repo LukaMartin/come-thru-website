@@ -34,6 +34,7 @@ const eventSchema = z
     starts_at: requiredText,
     ends_at: nullableText,
     hero_image_url: nullableText,
+    ticket_colours: nullableText,
     is_free: z.boolean(),
     status: eventStatusSchema.optional(),
   })
@@ -144,6 +145,7 @@ function formToEventInput(formData: FormData) {
     hero_image_url: formData.get("hero_image_url"),
     is_free: formData.get("is_free") === "on",
     status: formData.get("status") || undefined,
+    ticket_colours: formData.get("ticket_colours"),
   });
 }
 

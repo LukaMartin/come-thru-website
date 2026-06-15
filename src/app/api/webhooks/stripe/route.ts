@@ -40,6 +40,7 @@ type FulfillmentResult = {
   order_total_cents: number;
   order_currency: string;
   ticket_email_status: "pending" | "sent" | "failed" | "skipped";
+  ticket_colours: string | null;
   tickets: FulfilledTicket[] | null;
 };
 
@@ -115,11 +116,14 @@ async function handlePaymentIntentStopped(
   }
 
   const supabase = createServiceClient();
-  const { error } = await supabase.rpc("ticketing_cancel_checkout_reservation", {
-    p_order_id: orderId,
-    p_reason: paymentIntent.status === "canceled" ? "cancelled" : "failed",
-    p_stripe_checkout_session_id: null,
-  });
+  const { error } = await supabase.rpc(
+    "ticketing_cancel_checkout_reservation",
+    {
+      p_order_id: orderId,
+      p_reason: paymentIntent.status === "canceled" ? "cancelled" : "failed",
+      p_stripe_checkout_session_id: null,
+    },
+  );
 
   if (error) {
     throw error;
@@ -192,7 +196,9 @@ async function handlePaymentIntentSucceeded(
   }
 
   if (paymentIntent.currency.toLowerCase() !== order.currency.toLowerCase()) {
-    throw new Error("Stripe payment currency does not match the pending order.");
+    throw new Error(
+      "Stripe payment currency does not match the pending order.",
+    );
   }
 
   const { data: reservedOrderItems, error: orderItemsError } = await supabase
@@ -337,6 +343,7 @@ async function handlePaymentIntentSucceeded(
           currency: fulfillment.order_currency,
           tickets: emailTickets,
           venueAddress: fulfillment.venue_address ?? "",
+          ticketColours: fulfillment.ticket_colours ?? "",
         });
         await markTicketEmailDelivery(order.id, "sent", undefined, supabase);
       } catch (error) {
@@ -383,7 +390,8 @@ async function getPaymentBuyerDetails(
     const charge = await stripe.charges.retrieve(latestCharge);
 
     return {
-      email: charge.billing_details.email ?? paymentIntent.receipt_email ?? null,
+      email:
+        charge.billing_details.email ?? paymentIntent.receipt_email ?? null,
       name: charge.billing_details.name ?? null,
     };
   }
@@ -391,7 +399,9 @@ async function getPaymentBuyerDetails(
   if (latestCharge && typeof latestCharge !== "string") {
     return {
       email:
-        latestCharge.billing_details.email ?? paymentIntent.receipt_email ?? null,
+        latestCharge.billing_details.email ??
+        paymentIntent.receipt_email ??
+        null,
       name: latestCharge.billing_details.name ?? null,
     };
   }

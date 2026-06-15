@@ -102,14 +102,24 @@ export function AdminEventForm({ action, event, mode }: AdminEventFormProps) {
         </label>
       </div>
 
-      <label className={labelClass}>
-        Hero image URL
-        <input
-          name="hero_image_url"
-          defaultValue={event?.hero_image_url ?? ""}
-          className={inputClass}
-        />
-      </label>
+      <div className="grid gap-4 md:grid-cols-2">
+        <label className={labelClass}>
+          Hero image URL
+          <input
+            name="hero_image_url"
+            defaultValue={event?.hero_image_url ?? ""}
+            className={inputClass}
+          />
+        </label>
+        <label className={labelClass}>
+          Ticket Colours
+          <input
+            name="ticket_colours"
+            defaultValue={event?.ticket_colours ?? ""}
+            className={inputClass}
+          />
+        </label>
+      </div>
 
       <div className="grid gap-4 md:grid-cols-2">
         <label className="flex items-center gap-3 text-sm text-[#f3eadb]/72">

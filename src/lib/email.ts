@@ -23,6 +23,7 @@ export type TicketEmailInput = {
   orderReference: string;
   currency: string;
   tickets: EmailTicket[];
+  ticketColours: string;
 };
 
 type SendContactEmailInput = {
@@ -61,7 +62,9 @@ export async function sendTicketEmail(input: TicketEmailInput) {
   const from = process.env.EMAIL_FROM;
 
   if (!apiKey || !from) {
-    throw new Error("RESEND_API_KEY and EMAIL_FROM are required to send tickets.");
+    throw new Error(
+      "RESEND_API_KEY and EMAIL_FROM are required to send tickets.",
+    );
   }
 
   const resend = new Resend(apiKey);
@@ -211,7 +214,27 @@ function withDisplayName(from: string, displayName: string) {
   return `${displayName} <${email}>`;
 }
 
+function getTicketColours(ticketColours: string) {
+  const colours = ticketColours.split(",");
+
+  if (colours.length >= 2) {
+    return {
+      stop1: colours[0],
+      stop2: colours[1],
+      stop3: colours[2],
+    };
+  } else {
+    return {
+      stop1: "#FFF2C7",
+      stop2: "#FFD6EA",
+      stop3: "#CDEBFF",
+    };
+  }
+}
+
 export async function createTicketsPdf(input: TicketEmailInput) {
+  const { stop1, stop2, stop3 } = getTicketColours(input.ticketColours);
+
   const doc = new PDFDocument({
     size: "A4",
     layout: "landscape",
@@ -240,26 +263,51 @@ export async function createTicketsPdf(input: TicketEmailInput) {
     const pageWidth = doc.page.width;
     const pageHeight = doc.page.height;
     const cardWidth = pageWidth - 72;
-    const cardHeight = pageHeight - 280;
+    const layoutCardHeight = pageHeight - 280;
     const cardX = (pageWidth - cardWidth) / 2;
-    const cardY = (pageHeight - cardHeight) / 2;
-    const qrSize = Math.min(250, cardHeight - 72);
+    const layoutCardY = (pageHeight - layoutCardHeight) / 2;
+    const qrSize = Math.min(250, layoutCardHeight - 72);
     const qrPadding = 6;
     const qrBoxSize = qrSize + qrPadding * 2;
     const qrBoxX = cardX + 6;
-    const qrBoxY = cardY + (cardHeight - qrBoxSize) / 2;
-    const detailsX = qrBoxX + qrBoxSize + 34;
+    const qrBoxY = layoutCardY + (layoutCardHeight - qrBoxSize) / 2;
+    const detailsX = qrBoxX + qrBoxSize + 64;
     const detailsWidth = cardX + cardWidth - detailsX - 36;
     const dateLabel = formatEventDateRange(input.startsAt, input.endsAt);
     const logoWidth = 88;
+    const cardVerticalPadding = 14;
+    const cardY = qrBoxY - cardVerticalPadding;
+    const cardHeight = qrBoxSize + cardVerticalPadding * 2;
+    const dividerX = (qrBoxX + qrPadding + qrSize + detailsX - 12) / 2;
+    const copyBgX = dividerX + 1;
+    const copyBgY = cardY + 1;
+    const copyBgWidth = cardX + cardWidth - copyBgX - 1;
+    const copyBgHeight = cardHeight - 2;
+    const notchRadius = 9;
 
     doc.rect(0, 0, pageWidth, pageHeight).fill("#ffffff");
 
+    const copyGradient = doc.linearGradient(
+      copyBgX,
+      copyBgY,
+      copyBgX + copyBgWidth,
+      copyBgY + copyBgHeight,
+    );
+
+    copyGradient.stop(0, stop1).stop(0.48, stop2).stop(1, stop3);
+
+    doc
+      .save()
+      .rect(copyBgX, copyBgY, copyBgWidth, copyBgHeight)
+      .fillOpacity(0.45)
+      .fill(copyGradient)
+      .restore();
+
     doc
       .roundedRect(cardX, cardY, cardWidth, cardHeight, 0)
-      .lineWidth(2.4)
+      .lineWidth(2)
       .strokeColor("#050505")
-      .strokeOpacity(0.62)
+      .strokeOpacity(0.5)
       .stroke();
 
     doc.image(qrBuffer, qrBoxX + qrPadding, qrBoxY + qrPadding, {
@@ -268,10 +316,22 @@ export async function createTicketsPdf(input: TicketEmailInput) {
     });
 
     doc
+      .moveTo(dividerX, cardY + notchRadius)
+      .lineTo(dividerX, cardY + cardHeight - notchRadius)
+      .lineWidth(2.5)
+      .dash(10, { space: 4 })
+      .strokeColor("#000000")
+      .strokeOpacity(1)
+      .stroke()
+      .undash();
+
+    drawTicketNotches(doc, dividerX, cardY, cardY + cardHeight, notchRadius);
+
+    doc
       .font("Inter-Bold")
-      .fontSize(26)
+      .fontSize(22)
       .fillColor("#050505")
-      .text(input.eventName, detailsX - 12, cardY + 36, {
+      .text(input.eventName.toUpperCase(), detailsX - 12, layoutCardY + 36, {
         width: detailsWidth,
         height: 76,
         ellipsis: true,
@@ -279,24 +339,24 @@ export async function createTicketsPdf(input: TicketEmailInput) {
 
     doc
       .font("Inter-Bold")
-      .fontSize(18)
+      .fontSize(16)
       .fillColor("#050505")
-      .text(`${ticket.ticketName}`, detailsX - 10, cardY + 74, {
+      .text(ticket.ticketName.toUpperCase(), detailsX - 10, layoutCardY + 70, {
         width: detailsWidth,
         ellipsis: true,
       });
 
-    drawCalendarIcon(doc, detailsX - 10, cardY + 136, "#050505", 21);
+    drawCalendarIcon(doc, detailsX - 10, layoutCardY + 136, "#050505", 21);
     doc
       .font("Inter")
       .fontSize(18)
       .fillColor("#050505")
-      .text(dateLabel, detailsX + 24, cardY + 136, {
+      .text(dateLabel, detailsX + 24, layoutCardY + 136, {
         width: detailsWidth - 34,
         ellipsis: true,
       });
 
-    drawPinIcon(doc, detailsX - 10, cardY + 170, "#050505", 22);
+    drawPinIcon(doc, detailsX - 10, layoutCardY + 170, "#050505", 22);
     doc
       .font("Inter")
       .fontSize(18)
@@ -304,7 +364,7 @@ export async function createTicketsPdf(input: TicketEmailInput) {
       .text(
         input.venue + " - " + input.venueAddress,
         detailsX + 24,
-        cardY + 170,
+        layoutCardY + 170,
         {
           width: detailsWidth - 34,
           ellipsis: true,
@@ -315,17 +375,22 @@ export async function createTicketsPdf(input: TicketEmailInput) {
       .font("Inter-Bold")
       .fontSize(16)
       .fillColor("#050505")
-      .text("Ticket number:", detailsX - 7, cardY + cardHeight - 57, {
-        continued: true,
-      })
+      .text(
+        "Ticket number:",
+        detailsX - 7,
+        layoutCardY + layoutCardHeight - 57,
+        {
+          continued: true,
+        },
+      )
       .font("Inter")
       .fillColor("#050505")
       .text(` ${ticket.ticketNumber}`);
 
     doc.image(
       ticketLogoPath,
-      cardX + cardWidth - logoWidth - 34,
-      cardY + cardHeight - 92,
+      cardX + cardWidth - logoWidth - 16,
+      layoutCardY + layoutCardHeight - 92,
       {
         width: logoWidth,
       },
@@ -340,6 +405,61 @@ export async function createTicketsPdf(input: TicketEmailInput) {
 function registerTicketFonts(doc: PDFKit.PDFDocument) {
   doc.registerFont("Inter", interRegularPath);
   doc.registerFont("Inter-Bold", interBoldPath);
+}
+
+function drawTicketNotches(
+  doc: PDFKit.PDFDocument,
+  x: number,
+  topY: number,
+  bottomY: number,
+  radius: number,
+) {
+  const curve = radius * 0.5522847498;
+
+  doc.save().fillColor("#ffffff");
+  doc.circle(x, topY, radius).fill();
+  doc.circle(x, bottomY, radius).fill();
+
+  doc
+    .lineWidth(2)
+    .strokeColor("#050505")
+    .strokeOpacity(0.5)
+    .moveTo(x - radius, topY)
+    .bezierCurveTo(
+      x - radius,
+      topY + curve,
+      x - curve,
+      topY + radius,
+      x,
+      topY + radius,
+    )
+    .bezierCurveTo(
+      x + curve,
+      topY + radius,
+      x + radius,
+      topY + curve,
+      x + radius,
+      topY,
+    )
+    .moveTo(x - radius, bottomY)
+    .bezierCurveTo(
+      x - radius,
+      bottomY - curve,
+      x - curve,
+      bottomY - radius,
+      x,
+      bottomY - radius,
+    )
+    .bezierCurveTo(
+      x + curve,
+      bottomY - radius,
+      x + radius,
+      bottomY - curve,
+      x + radius,
+      bottomY,
+    )
+    .stroke()
+    .restore();
 }
 
 function drawCalendarIcon(

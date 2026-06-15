@@ -26,6 +26,7 @@ returns table (
   order_total_cents integer,
   order_currency text,
   ticket_email_status text,
+  ticket_colours text,
   tickets jsonb
 )
 language plpgsql
@@ -79,6 +80,7 @@ begin
         null::integer,
         null::text,
         null::text,
+        null::text,
         '[]'::jsonb;
       return;
     end if;
@@ -109,6 +111,7 @@ begin
       locked_order.amount_total_cents,
       locked_order.currency,
       locked_order.ticket_email_status,
+      locked_event.ticket_colours,
       case
         when locked_order.status = 'paid'
           and locked_order.ticket_email_status not in ('sent', 'skipped')
@@ -193,6 +196,7 @@ begin
       locked_order.amount_total_cents,
       locked_order.currency,
       locked_order.ticket_email_status,
+      locked_event.ticket_colours,
       case
         when locked_order.ticket_email_status not in ('sent', 'skipped')
         then coalesce(
@@ -237,6 +241,7 @@ begin
       locked_order.amount_total_cents,
       locked_order.currency,
       locked_order.ticket_email_status,
+      locked_event.ticket_colours,
       '[]'::jsonb;
     return;
   end if;
@@ -273,6 +278,7 @@ begin
       locked_order.amount_total_cents,
       locked_order.currency,
       locked_order.ticket_email_status,
+      locked_event.ticket_colours,
       '[]'::jsonb;
     return;
   end if;
@@ -384,6 +390,7 @@ begin
         locked_order.amount_total_cents,
         locked_order.currency,
         locked_order.ticket_email_status,
+        locked_event.ticket_colours,
         '[]'::jsonb;
       return;
     end if;
@@ -493,6 +500,7 @@ begin
     locked_order.amount_total_cents,
     locked_order.currency,
     locked_order.ticket_email_status,
+    locked_event.ticket_colours,
     created_tickets;
 end;
 $$;

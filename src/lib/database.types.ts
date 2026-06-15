@@ -19,6 +19,7 @@ export type Database = {
           starts_at: string;
           ends_at: string | null;
           hero_image_url: string | null;
+          ticket_colours: string | null;
           is_current: boolean;
           is_free: boolean;
           status: "draft" | "published" | "archived";
@@ -34,6 +35,7 @@ export type Database = {
           starts_at: string;
           ends_at?: string | null;
           hero_image_url?: string | null;
+          ticket_colours?: string | null;
           is_current?: boolean;
           is_free?: boolean;
           status?: "draft" | "published" | "archived";
