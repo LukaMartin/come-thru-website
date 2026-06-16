@@ -210,7 +210,7 @@ export default async function TicketsPage({ searchParams }: TicketsPageProps) {
           ) : null}
         </section>
 
-        <section className="pb-2 md:pb-4">
+        <section className="pb-0 md:pb-4 -mt-2">
           <div className="relative overflow-hidden border border-[#f3eadb]/14 bg-[radial-gradient(circle_at_16%_22%,rgba(172,67,43,0.28),transparent_34%),radial-gradient(circle_at_84%_72%,rgba(215,199,173,0.14),transparent_30%),rgba(13,9,8,0.94)] p-5 shadow-2xl shadow-black/30 md:p-8 small-laptop:p-4.5">
             <div className="pointer-events-none absolute -left-16 top-8 h-48 w-48 rounded-full bg-[#b5482f]/22 blur-3xl" />
             <div className="pointer-events-none absolute -right-14 bottom-4 h-44 w-44 rounded-full bg-[#d7c7ad]/14 blur-3xl" />

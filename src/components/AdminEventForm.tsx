@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useActionState } from "react";
 import type { AdminMutationState } from "@/lib/admin-events-actions";
 import type { Database } from "@/lib/database.types";
@@ -19,10 +20,13 @@ type AdminEventFormProps = {
 const initialState: AdminMutationState = {};
 const inputClass =
   "border border-[#f3eadb]/14 bg-black/35 px-4 py-3 text-sm text-[#f8f0e3] outline-none transition focus:border-[#d7c7ad]/70";
+const fileInputClass =
+  "border border-[#f3eadb]/14 bg-black/35 px-3 py-2 text-sm text-[#f8f0e3] file:mr-4 file:border-0 file:bg-[#f8f0e3] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-black outline-none transition focus:border-[#d7c7ad]/70";
 const labelClass = "grid gap-2 text-sm text-[#f3eadb]/72";
 
 export function AdminEventForm({ action, event, mode }: AdminEventFormProps) {
   const [state, formAction, isPending] = useActionState(action, initialState);
+  const previewUrl = event?.hero_image_url?.trim();
 
   return (
     <form action={formAction} className="grid gap-5">
@@ -102,7 +106,50 @@ export function AdminEventForm({ action, event, mode }: AdminEventFormProps) {
         </label>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      {mode === "edit" ? (
+        <div className="grid gap-4 md:grid-cols-[12rem_1fr] md:items-start">
+          <div className="overflow-hidden border border-[#f3eadb]/12 bg-[#11100d]">
+            {previewUrl ? (
+              <Image
+                src={previewUrl}
+                alt={event?.name ?? "Event hero image"}
+                width={360}
+                height={512}
+                unoptimized
+                className="aspect-45/64 w-full object-cover opacity-90"
+              />
+            ) : (
+              <div className="flex aspect-45/64 items-center justify-center p-5 text-center text-sm text-[#f3eadb]/50">
+                No hero image yet.
+              </div>
+            )}
+          </div>
+
+          <div className="grid content-start gap-4">
+            <label className={labelClass}>
+              Upload hero image
+              <input
+                name="hero_image_file"
+                type="file"
+                accept="image/jpeg,image/png"
+                className={fileInputClass}
+              />
+              <span className="text-xs leading-5 text-[#f3eadb]/45">
+                JPG or PNG, converted to a 720x1024 WebP.
+              </span>
+            </label>
+
+            <label className={labelClass}>
+              Current hero image URL
+              <input
+                name="hero_image_url"
+                defaultValue={event?.hero_image_url ?? ""}
+                className={inputClass}
+              />
+            </label>
+          </div>
+        </div>
+      ) : (
         <label className={labelClass}>
           Hero image URL
           <input
@@ -111,6 +158,9 @@ export function AdminEventForm({ action, event, mode }: AdminEventFormProps) {
             className={inputClass}
           />
         </label>
+      )}
+
+      <div className="grid gap-4 md:grid-cols-2">
         <label className={labelClass}>
           Ticket Colours
           <input
@@ -118,18 +168,6 @@ export function AdminEventForm({ action, event, mode }: AdminEventFormProps) {
             defaultValue={event?.ticket_colours ?? ""}
             className={inputClass}
           />
-        </label>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <label className="flex items-center gap-3 text-sm text-[#f3eadb]/72">
-          <input
-            name="is_free"
-            type="checkbox"
-            defaultChecked={event?.is_free ?? false}
-            className="size-4 accent-[#f8f0e3]"
-          />
-          Free event
         </label>
         {mode === "edit" ? (
           <label className={labelClass}>
@@ -147,6 +185,18 @@ export function AdminEventForm({ action, event, mode }: AdminEventFormProps) {
         ) : (
           <input type="hidden" name="status" value="draft" />
         )}
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <label className="flex items-center gap-3 text-sm text-[#f3eadb]/72">
+          <input
+            name="is_free"
+            type="checkbox"
+            defaultChecked={event?.is_free ?? false}
+            className="size-4 accent-[#f8f0e3]"
+          />
+          Free event
+        </label>
       </div>
 
       {state.error ? (

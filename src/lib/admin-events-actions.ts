@@ -1,9 +1,12 @@
 "use server";
 
+import { put } from "@vercel/blob";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import sharp from "sharp";
 import { z } from "zod";
 import { createSessionAuthClient, requireAdmin } from "@/lib/admin-auth";
+import { requireEnv } from "@/lib/env";
 import { sydneyDateTimeLocalToIso } from "@/lib/event-time";
 import * as Sentry from "@sentry/nextjs";
 
@@ -18,6 +21,12 @@ const nullableText = z
   .transform((value) => (value.length > 0 ? value : null));
 
 const requiredText = z.string().trim().min(1, "Required.");
+
+const maxHeroImageSize = 12 * 1024 * 1024;
+const heroImageWidth = 720;
+const heroImageHeight = 1024;
+const webpQuality = 90;
+const acceptedHeroImageTypes = new Set(["image/jpeg", "image/png"]);
 
 const eventStatusSchema = z.enum(["draft", "published", "archived"]);
 
@@ -149,6 +158,57 @@ function formToEventInput(formData: FormData) {
   });
 }
 
+function isUpload(value: FormDataEntryValue | null): value is File {
+  return value instanceof File && value.size > 0;
+}
+
+function safeFilename(filename: string) {
+  return filename
+    .toLowerCase()
+    .replace(/[^a-z0-9.]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
+}
+
+function filenameWithoutExtension(filename: string) {
+  return filename.replace(/\.[^.]+$/, "");
+}
+
+async function uploadEventHeroImage(eventId: string, upload: File) {
+  if (!acceptedHeroImageTypes.has(upload.type)) {
+    throw new Error("Upload a JPG or PNG hero image.");
+  }
+
+  if (upload.size > maxHeroImageSize) {
+    throw new Error("Keep source hero images under 12MB.");
+  }
+
+  const filename =
+    filenameWithoutExtension(safeFilename(upload.name)) || eventId;
+  const optimizedImage = await sharp(Buffer.from(await upload.arrayBuffer()))
+    .rotate()
+    .resize({
+      width: heroImageWidth,
+      height: heroImageHeight,
+      fit: "cover",
+      position: "center",
+    })
+    .webp({ quality: webpQuality })
+    .toBuffer();
+
+  const blob = await put(
+    `events/${eventId}/hero/${Date.now()}-${filename}.webp`,
+    optimizedImage,
+    {
+      access: "public",
+      contentType: "image/webp",
+      token: requireEnv("BLOB_READ_WRITE_TOKEN"),
+    },
+  );
+
+  return blob.url;
+}
+
 function formToTicketTypeInput(formData: FormData) {
   return ticketTypeSchema.parse({
     name: formData.get("name"),
@@ -246,11 +306,16 @@ export async function updateEventAction(
 
   try {
     const input = formToEventInput(formData);
+    const heroImageUpload = formData.get("hero_image_file");
+    const heroImageUrl = isUpload(heroImageUpload)
+      ? await uploadEventHeroImage(eventId, heroImageUpload)
+      : input.hero_image_url;
     const { supabase } = await createSessionAuthClient();
     const { error } = await supabase
       .from("ticketing_events")
       .update({
         ...input,
+        hero_image_url: heroImageUrl,
         ...(input.status !== "published" ? { is_current: false } : {}),
       })
       .eq("id", eventId);
@@ -261,6 +326,7 @@ export async function updateEventAction(
 
     revalidatePath("/admin/events");
     revalidatePath(`/admin/events/${eventId}`);
+    revalidatePath("/tickets");
     return { success: "Event updated." };
   } catch (error) {
     return {
