@@ -36,11 +36,11 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
 
             <div className="relative mx-auto max-w-2xl">
               <div className="flex items-center justify-center gap-4">
-                <span className="h-px w-10 bg-[#d7c7ad]/35" />
+                <span className="h-px w-7 md:w-10 bg-[#d7c7ad]/35" />
                 <p className="text-[0.68rem] uppercase tracking-[0.45em] text-[#d7c7ad]">
                   Something snapped
                 </p>
-                <span className="h-px w-10 bg-[#d7c7ad]/35" />
+                <span className="h-px w-7 md:w-10 bg-[#d7c7ad]/35" />
               </div>
 
               <h1 className="mt-6 text-5xl font-black uppercase leading-[0.9] tracking-[-0.06em] md:text-7xl">

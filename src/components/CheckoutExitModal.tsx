@@ -49,7 +49,7 @@ export default function CheckoutExitModal({
             if (!isAlreadyCancelled) {
               await cancelCheckoutReservationClient(orderId);
             }
-            router.push("/tickets?view=tickets");
+            router.push("/event-info?view=tickets");
           }}
           className="mt-7 inline-flex items-center justify-center rounded-md bg-[#f8f0e3] px-6 py-3 text-sm font-semibold uppercase tracking-widest text-black transition duration-300 hover:bg-white"
         >

@@ -29,7 +29,7 @@ export default function SuccessPage() {
                 tickets shortly, please be sure to check your spam.
               </p>
               <Link
-                href="/tickets"
+                href="/event-info"
                 className="mt-8 inline-flex items-center justify-center border border-[#f3eadb]/18 bg-[#f8f0e3] rounded-md px-6 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-[#050505] transition duration-300 hover:bg-white"
               >
                 Back to event

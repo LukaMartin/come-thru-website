@@ -326,7 +326,7 @@ export async function updateEventAction(
 
     revalidatePath("/admin/events");
     revalidatePath(`/admin/events/${eventId}`);
-    revalidatePath("/tickets");
+    revalidatePath("/event-info");
     return { success: "Event updated." };
   } catch (error) {
     return {
@@ -460,7 +460,7 @@ export async function updateLineupArtistsAction(
       }
     }
 
-    revalidatePath("/tickets");
+    revalidatePath("/event-info");
     revalidatePath(`/admin/events/${eventId}`);
     return { success: "Lineup artists updated." };
   } catch (error) {
@@ -489,7 +489,7 @@ export async function publishCurrentEventAction(formData: FormData) {
   }
 
   revalidatePath("/");
-  revalidatePath("/tickets");
+  revalidatePath("/event-info");
   revalidatePath("/admin/events");
   revalidatePath(`/admin/events/${eventId}`);
   redirect(`/admin/events/${eventId}`);
@@ -510,7 +510,7 @@ export async function archiveEventAction(formData: FormData) {
   }
 
   revalidatePath("/");
-  revalidatePath("/tickets");
+  revalidatePath("/event-info");
   revalidatePath("/admin/events");
   revalidatePath(`/admin/events/${eventId}`);
   redirect(`/admin/events/${eventId}`);

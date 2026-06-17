@@ -11,8 +11,14 @@ import {
   type LineupArtist,
 } from "@/lib/events";
 import { formatEventDateRange } from "@/lib/tickets";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Come Thru | Event Info",
+  description: "View information about the next Come Thru event.",
+};
 
 type TicketsPageProps = {
   searchParams?: Promise<{
@@ -54,7 +60,9 @@ function getLineupArtistGridStyle(
   };
 }
 
-export default async function TicketsPage({ searchParams }: TicketsPageProps) {
+export default async function EventInfoPage({
+  searchParams,
+}: TicketsPageProps) {
   const resolvedSearchParams = await searchParams;
   const viewParam = resolvedSearchParams?.view;
   const event = await getCurrentEvent();

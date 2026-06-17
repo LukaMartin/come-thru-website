@@ -308,7 +308,7 @@ function CheckoutContent({
             onClick={async (e) => {
               e.preventDefault();
               await cancelCheckoutReservationClient(orderId);
-              router.push("/tickets?view=tickets");
+              router.push("/event-info?view=tickets");
             }}
             className="group relative flex w-fit items-center gap-1.5 pb-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#d7c7ad] transition-colors duration-300 hover:text-[#f8f0e3] after:absolute after:bottom-0 after:right-0 after:h-px after:w-[calc(100%-1.25rem)] after:bg-current after:transition-all after:duration-400 after:ease-out hover:after:w-full"
           >
@@ -464,6 +464,9 @@ function CheckoutContent({
                       defaultCollapsed: false,
                       radios: "always",
                       spacedAccordionItems: true,
+                    },
+                    wallets: {
+                      link: "never",
                     },
                   }}
                 />

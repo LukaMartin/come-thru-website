@@ -7,7 +7,7 @@ import logoCream from "../../public/logo-cream.png";
 
 const navLinks = [
   { href: "/", label: "Home" },
-  { href: "/tickets", label: "Tickets" },
+  { href: "/event-info", label: "Event Info" },
   { href: "/faq", label: "FAQ" },
   { href: "/contact", label: "Contact" },
 ];
