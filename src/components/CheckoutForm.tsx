@@ -9,7 +9,6 @@ import { MAX_QUANTITY_PER_TRANSACTION } from "@/lib/checkout";
 
 type CheckoutFormProps = {
   eventId: string;
-  isFree: boolean;
   tickets: TicketOption[];
 };
 
@@ -65,7 +64,7 @@ function QuantityStepper({
   );
 }
 
-export function CheckoutForm({ eventId, isFree, tickets }: CheckoutFormProps) {
+export function CheckoutForm({ eventId, tickets }: CheckoutFormProps) {
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -158,26 +157,6 @@ export function CheckoutForm({ eventId, isFree, tickets }: CheckoutFormProps) {
       );
       setIsLoading(false);
     }
-  }
-
-  if (isFree) {
-    return (
-      <div className="space-y-4">
-        <div className="relative overflow-hidden border border-[#f3eadb]/12 bg-[radial-gradient(circle_at_18%_18%,rgba(172,67,43,0.34),transparent_34%),radial-gradient(circle_at_82%_22%,rgba(215,199,173,0.16),transparent_28%),rgba(0,0,0,0.28)] p-4 lg:p-5">
-          <div className="pointer-events-none absolute -right-10 -top-10 size-28 rounded-full bg-[#d7c7ad]/18 blur-2xl" />
-          <div className="relative">
-            <p className="text-sm leading-6 text-[#f3eadb]/62 md:text-base md:leading-8 small-laptop:leading-7">
-              This event is free to attend, there are no ticket options or
-              payment steps. Check the event details, bring your friends and
-              come through.
-            </p>
-          </div>
-        </div>
-        <p className="px-2 text-center text-[0.7rem] leading-5 text-[#f3eadb]/42 lg:text-xs">
-          Entry is still subject to venue capacity and door policy.
-        </p>
-      </div>
-    );
   }
 
   return (

@@ -224,7 +224,6 @@ export function CheckoutPanel({
         <div className="min-h-0 flex-1 px-5 py-5 lg:px-7 lg:py-6">
           <CheckoutForm
             eventId={eventId}
-            isFree={isFree}
             tickets={sortedTickets}
           />
         </div>
