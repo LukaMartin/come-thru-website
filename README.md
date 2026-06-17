@@ -16,10 +16,11 @@ It is a Next.js app with:
 ## Main Routes
 
 - `/` shows the brand page, archive gallery, social links, and the current event CTA.
-- `/tickets` shows the current published event, event image, event details, ticket types, remaining capacity, and checkout panel.
+- `/event-info` shows the current published event, event image, event details, ticket types, remaining capacity, and checkout panel.
 - `/success` confirms payment and tells the buyer to check their email for tickets.
 - `/contact` sends enquiries to the Come Thru team.
 - `/faq`, `/terms`, and `/privacy` are static support/legal pages.
+- `/tickets` shows a ticket QR code with the provided code and secret
 
 ## How Ticketing Works
 
