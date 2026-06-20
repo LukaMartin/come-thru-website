@@ -70,14 +70,39 @@ export async function POST(request: Request) {
   }
 
   if (event.type === "payment_intent.succeeded") {
-    const fulfillment = await handlePaymentIntentSucceeded(
-      event.id,
-      event.type,
-      event.data.object as Stripe.PaymentIntent,
-      stripe,
-    );
+    try {
+      const duplicate = await hasRecordedWebhookEvent(event.id);
 
-    return Response.json({ received: true, ...fulfillment });
+      if (duplicate) {
+        return Response.json({
+          received: true,
+          duplicate: true,
+          processed: false,
+        });
+      }
+
+      const fulfillment = await handlePaymentIntentSucceeded(
+        event.id,
+        event.type,
+        event.data.object as Stripe.PaymentIntent,
+        stripe,
+      );
+
+      return Response.json({ received: true, ...fulfillment });
+    } catch (error) {
+      Sentry.captureException(error, {
+        tags: {
+          "app.area": "stripe_webhook",
+          "stripe.event_type": event.type,
+          "stripe.webhook_event_id": event.id,
+        },
+      });
+
+      return Response.json(
+        { received: false, error: "Webhook processing failed." },
+        { status: 500 },
+      );
+    }
   }
 
   if (
@@ -152,6 +177,21 @@ async function recordWebhookEvent(eventId: string, eventType: string) {
   }
 
   return !data;
+}
+
+async function hasRecordedWebhookEvent(eventId: string) {
+  const supabase = createServiceClient();
+  const { data, error } = await supabase
+    .from("ticketing_webhook_events")
+    .select("id")
+    .eq("id", eventId)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return Boolean(data);
 }
 
 async function handlePaymentIntentSucceeded(
@@ -308,7 +348,20 @@ async function handlePaymentIntentSucceeded(
 
   if (fulfilledTickets.length > 0) {
     if (!buyerEmail) {
-      await markTicketEmailDelivery(order.id, "skipped", undefined, supabase);
+      try {
+        await markTicketEmailDelivery(order.id, "skipped", undefined, supabase);
+      } catch (error) {
+        Sentry.captureException(error, {
+          tags: {
+            "app.area": "stripe_webhook",
+            "email.delivery_status": "skipped",
+            "order.id": order.id,
+            "stripe.event_type": webhookEventType,
+            "stripe.payment_intent_id": paymentIntent.id,
+            "stripe.webhook_event_id": webhookEventId,
+          },
+        });
+      }
     } else {
       try {
         const emailTickets = await Promise.all(
@@ -347,6 +400,17 @@ async function handlePaymentIntentSucceeded(
         });
         await markTicketEmailDelivery(order.id, "sent", undefined, supabase);
       } catch (error) {
+        Sentry.captureException(error, {
+          tags: {
+            "app.area": "stripe_webhook",
+            "email.delivery_status": "failed",
+            "order.id": order.id,
+            "stripe.event_type": webhookEventType,
+            "stripe.payment_intent_id": paymentIntent.id,
+            "stripe.webhook_event_id": webhookEventId,
+          },
+        });
+
         try {
           await markTicketEmailDelivery(
             order.id,
@@ -366,8 +430,6 @@ async function handlePaymentIntentSucceeded(
             },
           });
         }
-
-        throw error;
       }
     }
   }
