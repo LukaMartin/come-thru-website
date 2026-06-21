@@ -8,10 +8,7 @@ type ActionToastState = {
   success?: string | null;
 };
 
-export function useActionToast(
-  state: ActionToastState,
-  isPending: boolean,
-) {
+export function useActionToast(state: ActionToastState, isPending: boolean) {
   const lastToastedState = useRef<ActionToastState | null>(null);
 
   useEffect(() => {
