@@ -93,10 +93,10 @@ export function AdminGalleryImageForm({
           Show this slot on the homepage
         </label>
 
-        {state.error ? (
+        {!isPending && state.error ? (
           <p className="text-sm text-red-300">{state.error}</p>
         ) : null}
-        {state.success ? (
+        {!isPending && state.success ? (
           <p className="text-sm text-emerald-300">{state.success}</p>
         ) : null}
 

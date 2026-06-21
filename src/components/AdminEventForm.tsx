@@ -20,6 +20,8 @@ type AdminEventFormProps = {
 const initialState: AdminMutationState = {};
 const inputClass =
   "border border-[#f3eadb]/14 bg-black/35 px-4 py-3 text-sm text-[#f8f0e3] outline-none transition focus:border-[#d7c7ad]/70";
+const selectClass =
+  "w-full appearance-none border border-[#f3eadb]/14 bg-black/35 px-4 py-3 pr-12 text-sm font-medium text-[#f8f0e3] outline-none transition hover:border-[#f3eadb]/28 focus:border-[#d7c7ad]/70 focus:bg-black/70";
 const fileInputClass =
   "border border-[#f3eadb]/14 bg-black/35 px-3 py-2 text-sm text-[#f8f0e3] file:mr-4 file:border-0 file:bg-[#f8f0e3] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-black outline-none transition focus:border-[#d7c7ad]/70";
 const labelClass = "grid gap-2 text-sm text-[#f3eadb]/72";
@@ -39,6 +41,7 @@ export function AdminEventForm({ action, event, mode }: AdminEventFormProps) {
             defaultValue={event?.slug ?? ""}
             className={inputClass}
             placeholder="warehouse-party-june"
+            autoComplete="off"
           />
         </label>
         <label className={labelClass}>
@@ -48,6 +51,7 @@ export function AdminEventForm({ action, event, mode }: AdminEventFormProps) {
             required
             defaultValue={event?.name ?? ""}
             className={inputClass}
+            autoComplete="off"
           />
         </label>
       </div>
@@ -59,6 +63,7 @@ export function AdminEventForm({ action, event, mode }: AdminEventFormProps) {
           defaultValue={event?.description ?? ""}
           rows={4}
           className={inputClass}
+          autoComplete="off"
         />
       </label>
 
@@ -70,6 +75,7 @@ export function AdminEventForm({ action, event, mode }: AdminEventFormProps) {
             required
             defaultValue={event?.venue ?? ""}
             className={inputClass}
+            autoComplete="off"
           />
         </label>
         <label className={labelClass}>
@@ -78,6 +84,7 @@ export function AdminEventForm({ action, event, mode }: AdminEventFormProps) {
             name="venue_address"
             defaultValue={event?.venue_address ?? ""}
             className={inputClass}
+            autoComplete="off"
           />
         </label>
       </div>
@@ -91,7 +98,7 @@ export function AdminEventForm({ action, event, mode }: AdminEventFormProps) {
             required
             defaultValue={formatSydneyDateTimeLocal(event?.starts_at ?? null)}
             className={inputClass}
-            autoComplete="new-password"
+            autoComplete="off"
           />
         </label>
         <label className={labelClass}>
@@ -101,7 +108,7 @@ export function AdminEventForm({ action, event, mode }: AdminEventFormProps) {
             type="datetime-local"
             defaultValue={formatSydneyDateTimeLocal(event?.ends_at ?? null)}
             className={inputClass}
-            autoComplete="new-password"
+            autoComplete="off"
           />
         </label>
       </div>
@@ -133,6 +140,7 @@ export function AdminEventForm({ action, event, mode }: AdminEventFormProps) {
                 type="file"
                 accept="image/jpeg,image/png"
                 className={fileInputClass}
+                autoComplete="off"
               />
               <span className="text-xs leading-5 text-[#f3eadb]/45">
                 JPG or PNG, converted to a 720x1024 WebP.
@@ -145,47 +153,90 @@ export function AdminEventForm({ action, event, mode }: AdminEventFormProps) {
                 name="hero_image_url"
                 defaultValue={event?.hero_image_url ?? ""}
                 className={inputClass}
+                autoComplete="off"
               />
             </label>
           </div>
         </div>
       ) : (
-        <label className={labelClass}>
-          Hero image URL
-          <input
-            name="hero_image_url"
-            defaultValue={event?.hero_image_url ?? ""}
-            className={inputClass}
-          />
-        </label>
+        <div className="grid gap-4 md:grid-cols-2">
+          <label className={labelClass}>
+            Hero image URL
+            <input
+              name="hero_image_url"
+              defaultValue={event?.hero_image_url ?? ""}
+              className={inputClass}
+              autoComplete="off"
+            />
+          </label>
+          <label className={labelClass}>
+            Ticket Colours
+            <input
+              name="ticket_colours"
+              defaultValue={event?.ticket_colours ?? ""}
+              className={inputClass}
+              placeholder="Enter comma-separated hex colours"
+              autoComplete="off"
+            />
+          </label>
+        </div>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <label className={labelClass}>
-          Ticket Colours
-          <input
-            name="ticket_colours"
-            defaultValue={event?.ticket_colours ?? ""}
-            className={inputClass}
-          />
-        </label>
-        {mode === "edit" ? (
+      {mode === "edit" ? (
+        <div className="grid gap-4 md:grid-cols-2">
+          <label className={labelClass}>
+            Ticket Colours
+            <input
+              name="ticket_colours"
+              defaultValue={event?.ticket_colours ?? ""}
+              className={inputClass}
+              autoComplete="off"
+            />
+          </label>
           <label className={labelClass}>
             Status
-            <select
-              name="status"
-              defaultValue={event?.status ?? "draft"}
-              className={inputClass}
-            >
-              <option value="draft">Draft</option>
-              <option value="published">Published</option>
-              <option value="archived">Archived</option>
-            </select>
+            <div className="relative">
+              <select
+                name="status"
+                defaultValue={event?.status ?? "draft"}
+                className={selectClass}
+              >
+                <option className="bg-[#080705] text-[#f8f0e3]" value="draft">
+                  Draft
+                </option>
+                <option
+                  className="bg-[#080705] text-[#f8f0e3]"
+                  value="published"
+                >
+                  Published
+                </option>
+                <option
+                  className="bg-[#080705] text-[#f8f0e3]"
+                  value="archived"
+                >
+                  Archived
+                </option>
+              </select>
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 20 20"
+                className="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-[#f3eadb]/70"
+              >
+                <path
+                  d="M5 7.5 10 12.5 15 7.5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="1.8"
+                />
+              </svg>
+            </div>
           </label>
-        ) : (
-          <input type="hidden" name="status" value="draft" />
-        )}
-      </div>
+        </div>
+      ) : (
+        <input type="hidden" name="status" value="draft" />
+      )}
 
       <div className="grid gap-4 md:grid-cols-2">
         <label className="flex items-center gap-3 text-sm text-[#f3eadb]/72">
@@ -199,10 +250,10 @@ export function AdminEventForm({ action, event, mode }: AdminEventFormProps) {
         </label>
       </div>
 
-      {state.error ? (
+      {!isPending && state.error ? (
         <p className="text-sm text-red-300">{state.error}</p>
       ) : null}
-      {state.success ? (
+      {!isPending && state.success ? (
         <p className="text-sm text-emerald-300">{state.success}</p>
       ) : null}
 

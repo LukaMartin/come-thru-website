@@ -2,15 +2,17 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
-  archiveEventAction,
   createTicketTypeAction,
   publishCurrentEventAction,
   updateEventAction,
   updateLineupArtistsAction,
   updateTicketTypeAction,
 } from "@/lib/admin-events-actions";
+import { AdminEventDashboard } from "@/components/AdminEventDashboard";
+import type { AdminEventOrder } from "@/components/AdminEventOrders";
 import { AdminEventForm } from "@/components/AdminEventForm";
 import { AdminLineupArtistsForm } from "@/components/AdminLineupArtistsForm";
+import { AdminTicketTypeCard } from "@/components/AdminTicketTypeCard";
 import { AdminTicketTypeForm } from "@/components/AdminTicketTypeForm";
 import { createSessionAuthClient, requireAdmin } from "@/lib/admin-auth";
 import type { Database } from "@/lib/database.types";
@@ -20,6 +22,9 @@ type EventRow = Database["public"]["Tables"]["ticketing_events"]["Row"];
 type TicketTypeRow =
   Database["public"]["Tables"]["ticketing_ticket_types"]["Row"];
 type LineupArtistRow = Database["public"]["Tables"]["lineup_artists"]["Row"];
+type OrderRow = Database["public"]["Tables"]["ticketing_orders"]["Row"];
+type OrderItemRow =
+  Database["public"]["Tables"]["ticketing_order_items"]["Row"];
 
 type AdminEventPageProps = {
   params: Promise<{ eventId: string }>;
@@ -79,119 +84,137 @@ export default async function AdminEventPage({ params }: AdminEventPageProps) {
   }
 
   const lineupArtists = (lineupArtistData ?? []) as LineupArtistRow[];
+  const populatedArtistCount = lineupArtists.filter((artist) =>
+    artist.name?.trim(),
+  ).length;
+  const { data: orderData, error: ordersError } = await supabase
+    .from("ticketing_orders")
+    .select("*")
+    .eq("event_id", event.id)
+    .in("status", ["paid", "refunded"])
+    .order("created_at", { ascending: false });
+
+  if (ordersError) {
+    throw ordersError;
+  }
+
+  const orderRows = (orderData ?? []) as OrderRow[];
+  const orderIds = orderRows.map((order) => order.id);
+  let orderItems: OrderItemRow[] = [];
+
+  if (orderIds.length > 0) {
+    const { data: orderItemData, error: orderItemsError } = await supabase
+      .from("ticketing_order_items")
+      .select("*")
+      .in("order_id", orderIds)
+      .order("created_at", { ascending: true });
+
+    if (orderItemsError) {
+      throw orderItemsError;
+    }
+
+    orderItems = (orderItemData ?? []) as OrderItemRow[];
+  }
+
+  const ticketTypeById = new Map(
+    ticketTypes.map((ticketType) => [ticketType.id, ticketType]),
+  );
+  const orderItemsByOrderId = orderItems.reduce((itemsByOrderId, item) => {
+    const existingItems = itemsByOrderId.get(item.order_id) ?? [];
+
+    existingItems.push(item);
+    itemsByOrderId.set(item.order_id, existingItems);
+
+    return itemsByOrderId;
+  }, new Map<string, OrderItemRow[]>());
+  const orders: AdminEventOrder[] = orderRows.map((order) => ({
+    id: order.id,
+    reference: order.order_reference,
+    email: order.buyer_email,
+    name: order.buyer_name,
+    status: order.status === "refunded" ? "refunded" : "paid",
+    totalCents: order.amount_total_cents,
+    currency: order.currency,
+    placedAt: order.created_at,
+    stripePaymentIntentId: order.stripe_payment_intent_id,
+    items: (orderItemsByOrderId.get(order.id) ?? []).map((item) => ({
+      name: ticketTypeById.get(item.ticket_type_id)?.name ?? "Unknown ticket",
+      quantity: item.quantity,
+    })),
+  }));
 
   return (
     <main className="relative min-h-dvh overflow-hidden bg-[#070605] px-5 py-8 text-[#f8f0e3] sm:px-6">
       <div className="pointer-events-none fixed inset-0 z-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.045)_0_1px,transparent_1px_18px)]" />
       <div className="relative z-10 mx-auto grid w-full max-w-6xl gap-8">
-        <header className="grid gap-5 border-b border-[#f3eadb]/12 pb-6 md:grid-cols-[1fr_auto]">
-          <div>
-            <Link
-              href="/admin/events"
-              className="text-xs uppercase tracking-[0.28em] text-[#d7c7ad] transition hover:text-[#f8f0e3]"
-            >
-              Back to events
-            </Link>
-            <h1 className="mt-4 text-5xl font-black uppercase leading-none tracking-[-0.06em]">
+        <header className="flex flex-col border-b border-[#f3eadb]/12 pb-6">
+          <div className="flex items-center justify-between">
+            <h1 className="text-5xl font-black uppercase leading-none tracking-[-0.06em]">
               {event.name}
             </h1>
+            <Link
+              href="/admin/events"
+              className="group relative flex w-fit items-center gap-1.5 pb-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#d7c7ad] transition-colors duration-300 hover:text-[#f8f0e3] after:absolute after:bottom-0 after:right-0 after:h-px after:w-[calc(100%-1.25rem)] after:bg-current after:transition-all after:duration-400 after:ease-out hover:after:w-full"
+            >
+              <span className="hover:-mr-5 opacity-0 transition-all duration-300 ease-out group-hover:mr-0 group-hover:opacity-100">
+                &larr;
+              </span>
+              <span>Back to events</span>
+            </Link>
+          </div>
+
+          <div>
             <p className="mt-4 text-sm text-[#f3eadb]/64">
               {formatEventDateRange(event.starts_at, event.ends_at)}
               {" / "}
               {event.venue}
             </p>
           </div>
-          <div className="flex flex-col gap-3 md:min-w-72">
-            <form action={publishCurrentEventAction} className="grid gap-3">
-              <input type="hidden" name="eventId" value={event.id} />
-              <label className="flex items-center gap-3 text-sm text-[#f3eadb]/72">
-                <input
-                  name="archive_previous"
-                  type="checkbox"
-                  defaultChecked
-                  className="size-4 accent-[#f8f0e3]"
-                />
-                Archive previous current event
-              </label>
-              <button
-                type="submit"
-                className="rounded-md bg-[#f8f0e3] px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-white"
-              >
-                Publish as current
-              </button>
-            </form>
-            <form action={archiveEventAction}>
-              <input type="hidden" name="eventId" value={event.id} />
-              <button
-                type="submit"
-                className="w-full rounded-md border border-[#f3eadb]/18 px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-[#f8f0e3] transition hover:bg-[#f3eadb]/10"
-              >
-                Archive event
-              </button>
-            </form>
-          </div>
         </header>
 
-        <section className="grid gap-4">
-          <div className="flex flex-wrap gap-3 text-xs uppercase tracking-[0.2em] text-[#f3eadb]/58">
-            <span>Status: {event.status}</span>
-            <span>Current: {event.is_current ? "yes" : "no"}</span>
-            <span>Slug: {event.slug}</span>
-          </div>
-          <div className="border border-[#f3eadb]/14 bg-[#080706] p-5 md:p-6">
-            <h2 className="mb-5 text-2xl font-black uppercase tracking-[-0.04em]">
-              Event details
-            </h2>
+        <AdminEventDashboard
+          status={event.status}
+          isCurrent={event.is_current}
+          slug={event.slug}
+          artistCount={populatedArtistCount}
+          ticketTypeCount={ticketTypes.length}
+          orders={orders}
+          publishAction={
+            event.is_current ? null : (
+              <form action={publishCurrentEventAction}>
+                <input type="hidden" name="eventId" value={event.id} />
+                <button
+                  type="submit"
+                  className="w-full rounded-md bg-[#f8f0e3] px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-white"
+                >
+                  Publish as current
+                </button>
+              </form>
+            )
+          }
+          eventDetails={
             <AdminEventForm action={updateEvent} event={event} mode="edit" />
-          </div>
-        </section>
-
-        <section className="grid gap-4">
-          <div className="border border-[#f3eadb]/14 bg-[#080706] p-5 md:p-6">
-            <h2 className="mb-2 text-2xl font-black uppercase tracking-[-0.04em]">
-              Lineup artists
-            </h2>
-            <p className="mb-5 text-sm leading-6 text-[#f3eadb]/58">
-              These appear in the Listen section on the tickets page.
-            </p>
+          }
+          artists={
             <AdminLineupArtistsForm
               action={updateLineupArtists}
               lineupArtists={lineupArtists}
             />
-          </div>
-        </section>
-
-        <section className="grid gap-5">
-          <div>
-            <p className="text-[0.68rem] uppercase tracking-[0.45em] text-[#d7c7ad]">
-              Tickets
-            </p>
-            <h2 className="mt-3 text-3xl font-black uppercase leading-none tracking-tighter">
-              Ticket types
-            </h2>
-          </div>
-
-          <div className="grid gap-4">
-            {(ticketTypes ?? []).map((ticketType) => (
+          }
+          ticketTypes={
+            <div className="grid gap-4">
               <div
-                key={ticketType.id}
-                className="border border-[#f3eadb]/14 bg-[#080706] p-5 md:p-6"
+                key="add-ticket-type"
+                className="border border-[#f3eadb]/14 bg-black/20 p-5 md:p-6"
               >
-                <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <h3 className="text-xl font-black uppercase tracking-[-0.03em]">
-                      {ticketType.name}
-                    </h3>
-                    <p className="mt-1 text-sm text-[#f3eadb]/58">
-                      {ticketType.active ? "Active" : "Inactive"} / capacity{" "}
-                      {ticketType.capacity}
-                    </p>
-                  </div>
-                  <p className="font-mono text-xs text-[#f3eadb]/45">
-                    {ticketType.id}
-                  </p>
-                </div>
-                <AdminTicketTypeForm
+                <h3 className="mb-5 text-xl font-black uppercase tracking-[-0.03em]">
+                  Add ticket type
+                </h3>
+                <AdminTicketTypeForm action={createTicketType} />
+              </div>
+              {(ticketTypes ?? []).map((ticketType) => (
+                <AdminTicketTypeCard
+                  key={ticketType.id}
                   action={updateTicketTypeAction.bind(
                     null,
                     event.id,
@@ -199,17 +222,10 @@ export default async function AdminEventPage({ params }: AdminEventPageProps) {
                   )}
                   ticketType={ticketType}
                 />
-              </div>
-            ))}
-          </div>
-
-          <div className="border border-[#f3eadb]/14 bg-[#080706] p-5 md:p-6">
-            <h3 className="mb-5 text-xl font-black uppercase tracking-[-0.03em]">
-              Add ticket type
-            </h3>
-            <AdminTicketTypeForm action={createTicketType} />
-          </div>
-        </section>
+              ))}
+            </div>
+          }
+        />
       </div>
     </main>
   );

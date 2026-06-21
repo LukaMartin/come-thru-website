@@ -39,12 +39,6 @@ export default async function AdminGalleryPage() {
       <div className="relative z-10 mx-auto grid w-full max-w-6xl gap-8">
         <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[#f3eadb]/12 pb-6">
           <div>
-            <Link
-              href="/admin/events"
-              className="text-xs uppercase tracking-[0.28em] text-[#d7c7ad] transition hover:text-[#f8f0e3]"
-            >
-              Back to events
-            </Link>
             <h1 className="mt-4 text-5xl font-black uppercase leading-none tracking-[-0.06em]">
               Gallery
             </h1>
@@ -53,10 +47,13 @@ export default async function AdminGalleryPage() {
             </p>
           </div>
           <Link
-            href="/"
-            className="rounded-full border border-[#f3eadb]/18 px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-[#f8f0e3] transition hover:bg-[#f3eadb]/10"
+            href="/admin/events"
+            className="group relative flex w-fit items-center gap-1.5 pb-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#d7c7ad] transition-colors duration-300 hover:text-[#f8f0e3] after:absolute after:bottom-0 after:right-0 after:h-px after:w-[calc(100%-1.25rem)] after:bg-current after:transition-all after:duration-400 after:ease-out hover:after:w-full"
           >
-            View site
+            <span className="hover:-mr-5 opacity-0 transition-all duration-300 ease-out group-hover:mr-0 group-hover:opacity-100">
+              &larr;
+            </span>
+            <span>Back to events</span>
           </Link>
         </header>
 

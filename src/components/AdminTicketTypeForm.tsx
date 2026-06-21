@@ -18,8 +18,8 @@ type AdminTicketTypeFormProps = {
 
 const initialState: AdminMutationState = {};
 const inputClass =
-  "border border-[#f3eadb]/14 bg-black/35 px-4 py-3 text-sm text-[#f8f0e3] outline-none transition focus:border-[#d7c7ad]/70";
-const labelClass = "grid gap-2 text-sm text-[#f3eadb]/72";
+  "min-w-0 w-full border border-[#f3eadb]/14 bg-black/35 px-4 py-3 text-sm text-[#f8f0e3] outline-none transition [color-scheme:dark] focus:border-[#d7c7ad]/70";
+const labelClass = "grid min-w-0 gap-2 text-sm text-[#f3eadb]/72";
 
 export function AdminTicketTypeForm({
   action,
@@ -30,7 +30,7 @@ export function AdminTicketTypeForm({
 
   return (
     <form action={formAction} className="grid gap-4">
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid min-w-0 gap-4 md:grid-cols-2">
         <label className={labelClass}>
           Name
           <input
@@ -38,7 +38,7 @@ export function AdminTicketTypeForm({
             required
             defaultValue={ticketType?.name ?? ""}
             className={inputClass}
-            autoComplete="new-password"
+            autoComplete="off"
           />
         </label>
         <label className={labelClass}>
@@ -48,7 +48,7 @@ export function AdminTicketTypeForm({
             defaultValue={ticketType?.stripe_price_id ?? ""}
             className={inputClass}
             placeholder="price_..."
-            autoComplete="new-password"
+            autoComplete="off"
           />
         </label>
       </div>
@@ -60,11 +60,11 @@ export function AdminTicketTypeForm({
           defaultValue={ticketType?.description ?? ""}
           rows={3}
           className={inputClass}
-          autoComplete="new-password"
+          autoComplete="off"
         />
       </label>
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <label className={labelClass}>
           Price cents
           <input
@@ -74,7 +74,7 @@ export function AdminTicketTypeForm({
             required
             defaultValue={ticketType?.price_cents ?? 0}
             className={inputClass}
-            autoComplete="new-password"
+            autoComplete="off"
           />
         </label>
         <label className={labelClass}>
@@ -84,7 +84,7 @@ export function AdminTicketTypeForm({
             required
             defaultValue={ticketType?.currency ?? "aud"}
             className={inputClass}
-            autoComplete="new-password"
+            autoComplete="off"
           />
         </label>
         <label className={labelClass}>
@@ -96,7 +96,7 @@ export function AdminTicketTypeForm({
             required
             defaultValue={ticketType?.capacity ?? 0}
             className={inputClass}
-            autoComplete="new-password"
+            autoComplete="off"
           />
         </label>
         <label className={labelClass}>
@@ -107,12 +107,12 @@ export function AdminTicketTypeForm({
             required
             defaultValue={ticketType?.sort_order ?? 0}
             className={inputClass}
-            autoComplete="new-password"
+            autoComplete="off"
           />
         </label>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid min-w-0 gap-4 md:grid-cols-2">
         <label className={labelClass}>
           Sales start
           <input
@@ -122,7 +122,7 @@ export function AdminTicketTypeForm({
               ticketType?.sales_start_at ?? null,
             )}
             className={inputClass}
-            autoComplete="new-password"
+            autoComplete="off"
           />
         </label>
         <label className={labelClass}>
@@ -134,7 +134,7 @@ export function AdminTicketTypeForm({
               ticketType?.sales_end_at ?? null,
             )}
             className={inputClass}
-            autoComplete="new-password"
+            autoComplete="off"
           />
         </label>
       </div>
@@ -149,17 +149,17 @@ export function AdminTicketTypeForm({
         Active
       </label>
 
-      {state.error ? (
+      {!isPending && state.error ? (
         <p className="text-sm text-red-300">{state.error}</p>
       ) : null}
-      {state.success ? (
+      {!isPending && state.success ? (
         <p className="text-sm text-emerald-300">{state.success}</p>
       ) : null}
 
       <button
         type="submit"
         disabled={isPending}
-        className="w-fit rounded-md border border-[#f3eadb]/18 px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-[#f8f0e3] transition hover:bg-[#f3eadb]/10 disabled:opacity-60"
+        className="w-fit rounded-md bg-[#f8f0e3] px-6 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-white disabled:opacity-60"
       >
         {isPending
           ? "Saving..."

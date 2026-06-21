@@ -49,7 +49,7 @@ export function AdminLineupArtistsForm({
                   name={`name_${slot}`}
                   defaultValue={artist?.name ?? ""}
                   className={inputClass}
-                  autoComplete="new-password"
+                  autoComplete="off"
                 />
               </label>
               <label className={labelClass}>
@@ -59,7 +59,7 @@ export function AdminLineupArtistsForm({
                   defaultValue={artist?.soundcloud_url ?? ""}
                   className={inputClass}
                   placeholder="https://on.soundcloud.com/..."
-                  autoComplete="new-password"
+                  autoComplete="off"
                 />
               </label>
             </div>
@@ -72,10 +72,10 @@ export function AdminLineupArtistsForm({
         deletes that slot.
       </p>
 
-      {state.error ? (
+      {!isPending && state.error ? (
         <p className="text-sm text-red-300">{state.error}</p>
       ) : null}
-      {state.success ? (
+      {!isPending && state.success ? (
         <p className="text-sm text-emerald-300">{state.success}</p>
       ) : null}
 

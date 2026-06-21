@@ -33,7 +33,7 @@ export function AdminLoginForm() {
           className="border border-[#f3eadb]/14 bg-black/35 px-4 py-3 text-base text-[#f8f0e3] outline-none transition focus:border-[#d7c7ad]/70"
         />
       </label>
-      {state.error ? (
+      {!isPending && state.error ? (
         <p className="text-sm text-red-300">{state.error}</p>
       ) : null}
       <button
