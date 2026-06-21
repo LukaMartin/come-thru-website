@@ -8,7 +8,11 @@ alter table public.ticketing_orders
 create table if not exists public.ticketing_ticket_email_secrets (
   ticket_id uuid primary key references public.ticketing_tickets(id) on delete cascade,
   order_id uuid not null references public.ticketing_orders(id) on delete cascade,
-  ticket_secret text not null,
+  ticket_secret_version smallint not null,
+  ticket_secret_algorithm text not null check (ticket_secret_algorithm = 'aes-256-gcm'),
+  ticket_secret_iv text not null,
+  ticket_secret_ciphertext text not null,
+  ticket_secret_auth_tag text not null,
   created_at timestamptz not null default now()
 );
 
@@ -156,7 +160,13 @@ begin
                 'ticket_type_id', ticket.ticket_type_id,
                 'ticket_code', ticket.ticket_code,
                 'ticket_number', ticket.ticket_number,
-                'ticket_secret', secret.ticket_secret
+                'encrypted_ticket_secret', jsonb_build_object(
+                  'version', secret.ticket_secret_version,
+                  'algorithm', secret.ticket_secret_algorithm,
+                  'iv', secret.ticket_secret_iv,
+                  'ciphertext', secret.ticket_secret_ciphertext,
+                  'authTag', secret.ticket_secret_auth_tag
+                )
               )
               order by ticket.created_at, ticket.id
             )
@@ -240,7 +250,13 @@ begin
                 'ticket_type_id', ticket.ticket_type_id,
                 'ticket_code', ticket.ticket_code,
                 'ticket_number', ticket.ticket_number,
-                'ticket_secret', secret.ticket_secret
+                'encrypted_ticket_secret', jsonb_build_object(
+                  'version', secret.ticket_secret_version,
+                  'algorithm', secret.ticket_secret_algorithm,
+                  'iv', secret.ticket_secret_iv,
+                  'ciphertext', secret.ticket_secret_ciphertext,
+                  'authTag', secret.ticket_secret_auth_tag
+                )
               )
               order by ticket.created_at, ticket.id
             )
@@ -401,7 +417,11 @@ begin
       (ticket.value ->> 'ticket_type_id')::uuid as ticket_type_id,
       ticket.value ->> 'ticket_code' as ticket_code,
       ticket.value ->> 'ticket_number' as ticket_number,
-      ticket.value ->> 'ticket_secret' as ticket_secret,
+      (ticket.value #>> '{encrypted_ticket_secret,version}')::smallint as ticket_secret_version,
+      ticket.value #>> '{encrypted_ticket_secret,algorithm}' as ticket_secret_algorithm,
+      ticket.value #>> '{encrypted_ticket_secret,iv}' as ticket_secret_iv,
+      ticket.value #>> '{encrypted_ticket_secret,ciphertext}' as ticket_secret_ciphertext,
+      ticket.value #>> '{encrypted_ticket_secret,authTag}' as ticket_secret_auth_tag,
       ticket.value ->> 'secret_hash' as secret_hash
     from jsonb_array_elements(p_tickets) with ordinality as ticket(value, ordinality)
   ),
@@ -436,17 +456,29 @@ begin
     insert into public.ticketing_ticket_email_secrets (
       ticket_id,
       order_id,
-      ticket_secret
+      ticket_secret_version,
+      ticket_secret_algorithm,
+      ticket_secret_iv,
+      ticket_secret_ciphertext,
+      ticket_secret_auth_tag
     )
     select
       inserted_tickets.id,
       locked_order.id,
-      input_tickets.ticket_secret
+      input_tickets.ticket_secret_version,
+      input_tickets.ticket_secret_algorithm,
+      input_tickets.ticket_secret_iv,
+      input_tickets.ticket_secret_ciphertext,
+      input_tickets.ticket_secret_auth_tag
     from inserted_tickets
     join input_tickets using (ticket_code)
     returning
       ticket_id,
-      ticket_secret
+      ticket_secret_version,
+      ticket_secret_algorithm,
+      ticket_secret_iv,
+      ticket_secret_ciphertext,
+      ticket_secret_auth_tag
   )
   select coalesce(
     jsonb_agg(
@@ -455,7 +487,13 @@ begin
         'ticket_type_id', inserted_tickets.ticket_type_id,
         'ticket_code', inserted_tickets.ticket_code,
         'ticket_number', inserted_tickets.ticket_number,
-        'ticket_secret', inserted_secrets.ticket_secret
+        'encrypted_ticket_secret', jsonb_build_object(
+          'version', inserted_secrets.ticket_secret_version,
+          'algorithm', inserted_secrets.ticket_secret_algorithm,
+          'iv', inserted_secrets.ticket_secret_iv,
+          'ciphertext', inserted_secrets.ticket_secret_ciphertext,
+          'authTag', inserted_secrets.ticket_secret_auth_tag
+        )
       )
       order by input_tickets.ordinality
     ),

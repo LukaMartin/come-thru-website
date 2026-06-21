@@ -143,6 +143,7 @@ function CheckoutContent({
   const elements = useElements();
   const [remainingTime, setRemainingTime] = useState<string | null>(null);
   const [exitReason, setExitReason] = useState<CheckoutExitReason | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [contactEmail, setContactEmail] = useState<string | null>(null);
   const [firstName, setFirstName] = useState("");
@@ -232,16 +233,33 @@ function CheckoutContent({
       return;
     }
 
+    setError(null);
+
     const email = event?.billingDetails?.email ?? contactEmail;
     const name = event?.billingDetails?.name ?? buyerName;
+
+    if (!email) {
+      setError("Missing email address.");
+      return;
+    } else if (!name) {
+      setError("Missing first and last name.");
+      return;
+    }
 
     setIsSubmitting(true);
 
     try {
-      await fetch(`/api/checkout/update`, {
+      const updateResponse = await fetch("/api/checkout/update", {
         method: "POST",
-        body: JSON.stringify({ orderId, email }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId, email, name }),
       });
+
+      if (!updateResponse.ok) {
+        setError("Could not save checkout details. Please try again.");
+        setIsSubmitting(false);
+        return;
+      }
     } catch (error) {
       Sentry.captureException(error);
     }
@@ -483,6 +501,9 @@ function CheckoutContent({
                     ? "Processing..."
                     : `Pay ${formatMoney(amountTotalCents, currency)}`}
               </button>
+              {error ? (
+                <p className="text-xs font-medium text-red-300">{error}</p>
+              ) : null}
             </form>
           </section>
         </div>

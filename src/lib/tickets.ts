@@ -1,6 +1,14 @@
 import crypto from "node:crypto";
 import QRCode from "qrcode";
-import { getAppUrl } from "@/lib/env";
+import { getAppUrl, requireEnv } from "@/lib/env";
+
+export type EncryptedTicketSecret = {
+  version: number;
+  algorithm: "aes-256-gcm";
+  iv: string;
+  ciphertext: string;
+  authTag: string;
+};
 
 export function createTicketSecret() {
   return crypto.randomBytes(24).toString("base64url");
@@ -12,6 +20,63 @@ export function createTicketCode() {
 
 export function hashTicketSecret(secret: string) {
   return crypto.createHash("sha256").update(secret).digest("hex");
+}
+
+export function encryptTicketSecret(secret: string): EncryptedTicketSecret {
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv(
+    "aes-256-gcm",
+    getTicketSecretEncryptionKey(),
+    iv,
+  );
+  const ciphertext = Buffer.concat([
+    cipher.update(secret, "utf8"),
+    cipher.final(),
+  ]);
+  return {
+    version: 1,
+    algorithm: "aes-256-gcm",
+    iv: iv.toString("base64url"),
+    ciphertext: ciphertext.toString("base64url"),
+    authTag: cipher.getAuthTag().toString("base64url"),
+  };
+}
+
+export function decryptTicketSecret({
+  ciphertext,
+  iv,
+  authTag,
+}: {
+  ciphertext: string;
+  iv: string;
+  authTag: string;
+}) {
+  const decipher = crypto.createDecipheriv(
+    "aes-256-gcm",
+    getTicketSecretEncryptionKey(),
+    Buffer.from(iv, "base64url"),
+  );
+
+  decipher.setAuthTag(Buffer.from(authTag, "base64url"));
+
+  return Buffer.concat([
+    decipher.update(Buffer.from(ciphertext, "base64url")),
+    decipher.final(),
+  ]).toString("utf8");
+}
+
+function getTicketSecretEncryptionKey() {
+  const key = requireEnv("TICKET_SECRET_ENCRYPTION_KEY").trim();
+  const encoding = /^[0-9a-f]{64}$/i.test(key) ? "hex" : "base64";
+  const decoded = Buffer.from(key, encoding);
+
+  if (decoded.length !== 32) {
+    throw new Error(
+      "TICKET_SECRET_ENCRYPTION_KEY must decode to exactly 32 bytes.",
+    );
+  }
+
+  return decoded;
 }
 
 export function getTicketUrl(ticketCode: string, secret: string) {

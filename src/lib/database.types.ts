@@ -222,13 +222,21 @@ export type Database = {
         Row: {
           ticket_id: string;
           order_id: string;
-          ticket_secret: string;
+          ticket_secret_version: number;
+          ticket_secret_algorithm: "aes-256-gcm";
+          ticket_secret_iv: string;
+          ticket_secret_ciphertext: string;
+          ticket_secret_auth_tag: string;
           created_at: string;
         };
         Insert: {
           ticket_id: string;
           order_id: string;
-          ticket_secret: string;
+          ticket_secret_version: number;
+          ticket_secret_algorithm: "aes-256-gcm";
+          ticket_secret_iv: string;
+          ticket_secret_ciphertext: string;
+          ticket_secret_auth_tag: string;
           created_at?: string;
         };
         Update: Partial<

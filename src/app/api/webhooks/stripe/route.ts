@@ -1,6 +1,6 @@
 import type Stripe from "stripe";
 import type { Database } from "@/lib/database.types";
-import { sendTicketEmail } from "@/lib/email";
+import { markTicketEmailDelivery, sendTicketEmail } from "@/lib/email";
 import { requireEnv } from "@/lib/env";
 import { createServiceClient } from "@/lib/supabase/server";
 import { createStripeClient } from "@/lib/stripe";
@@ -8,8 +8,11 @@ import {
   createTicketCode,
   createTicketQrDataUrl,
   createTicketSecret,
+  decryptTicketSecret,
+  encryptTicketSecret,
   getTicketUrl,
   hashTicketSecret,
+  type EncryptedTicketSecret,
 } from "@/lib/tickets";
 import * as Sentry from "@sentry/nextjs";
 
@@ -23,7 +26,7 @@ type FulfilledTicket = {
   ticket_type_id: string;
   ticket_code: string;
   ticket_number: string;
-  ticket_secret: string;
+  encrypted_ticket_secret: EncryptedTicketSecret;
 };
 
 type FulfillmentResult = {
@@ -213,6 +216,10 @@ async function handlePaymentIntentSucceeded(
     paymentIntent,
   );
 
+  if (!buyerEmail || !buyerName) {
+    throw new Error("Payment is missing required buyer details.");
+  }
+
   const { data: order, error: orderError } = await supabase
     .from("ticketing_orders")
     .select("*")
@@ -280,6 +287,7 @@ async function handlePaymentIntentSucceeded(
     Array.from({ length: item.quantity }).map(() => {
       const secret = createTicketSecret();
       const ticketCode = createTicketCode();
+      const encryptedSecret = encryptTicketSecret(secret);
       const ticketNumber = `${order.order_reference}-${String(
         nextTicketNumber,
       ).padStart(3, "0")}`;
@@ -287,7 +295,7 @@ async function handlePaymentIntentSucceeded(
       nextTicketNumber += 1;
 
       return {
-        secret,
+        encrypted_secret: encryptedSecret,
         ticket_type_id: item.ticket_type_id,
         ticket_code: ticketCode,
         ticket_number: ticketNumber,
@@ -311,7 +319,7 @@ async function handlePaymentIntentSucceeded(
         ticket_type_id: ticket.ticket_type_id,
         ticket_code: ticket.ticket_code,
         ticket_number: ticket.ticket_number,
-        ticket_secret: ticket.secret,
+        encrypted_ticket_secret: ticket.encrypted_secret,
         secret_hash: ticket.secret_hash,
       })),
     })
@@ -369,18 +377,24 @@ async function handlePaymentIntentSucceeded(
             const ticketType = ticketTypeById.get(ticket.ticket_type_id);
 
             if (!ticketType) {
-              throw new Error("Unable to match created ticket to its secret.");
+              throw new Error(
+                "Unable to match created ticket to its ticket type.",
+              );
             }
+
+            const ticketSecret = decryptTicketSecret(
+              ticket.encrypted_ticket_secret,
+            );
 
             return {
               code: ticket.ticket_code,
               ticketNumber: ticket.ticket_number,
               qrDataUrl: await createTicketQrDataUrl(
                 ticket.ticket_code,
-                ticket.ticket_secret,
+                ticketSecret,
               ),
               ticketName: ticketType.name,
-              ticketUrl: getTicketUrl(ticket.ticket_code, ticket.ticket_secret),
+              ticketUrl: getTicketUrl(ticket.ticket_code, ticketSecret),
             };
           }),
         );
@@ -447,14 +461,18 @@ async function getPaymentBuyerDetails(
   paymentIntent: Stripe.PaymentIntent,
 ) {
   const latestCharge = paymentIntent.latest_charge;
+  const metadataEmail = paymentIntent.metadata.buyer_email ?? null;
+  const metadataName = paymentIntent.metadata.buyer_name ?? null;
 
   if (typeof latestCharge === "string") {
     const charge = await stripe.charges.retrieve(latestCharge);
 
     return {
       email:
-        charge.billing_details.email ?? paymentIntent.receipt_email ?? null,
-      name: charge.billing_details.name ?? null,
+        charge.billing_details.email ??
+        paymentIntent.receipt_email ??
+        metadataEmail,
+      name: charge.billing_details.name ?? metadataName,
     };
   }
 
@@ -463,14 +481,14 @@ async function getPaymentBuyerDetails(
       email:
         latestCharge.billing_details.email ??
         paymentIntent.receipt_email ??
-        null,
-      name: latestCharge.billing_details.name ?? null,
+        metadataEmail,
+      name: latestCharge.billing_details.name ?? metadataName,
     };
   }
 
   return {
-    email: paymentIntent.receipt_email ?? null,
-    name: null,
+    email: paymentIntent.receipt_email ?? metadataEmail,
+    name: metadataName,
   };
 }
 
@@ -492,25 +510,4 @@ async function refundPaymentIntent(
       idempotencyKey: `ticketing-${orderId}-${reason}`,
     },
   );
-}
-
-async function markTicketEmailDelivery(
-  orderId: string,
-  status: "sent" | "failed" | "skipped",
-  error?: string,
-  supabaseClient?: ReturnType<typeof createServiceClient>,
-) {
-  const supabase = supabaseClient ?? createServiceClient();
-  const { error: updateError } = await supabase.rpc(
-    "ticketing_mark_ticket_email_delivery",
-    {
-      p_order_id: orderId,
-      p_status: status,
-      p_error: error ?? null,
-    },
-  );
-
-  if (updateError) {
-    throw updateError;
-  }
 }

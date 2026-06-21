@@ -3,6 +3,7 @@ import PDFDocument from "pdfkit";
 import { Resend } from "resend";
 import { CONTACT_EMAIL, SUPPORT_EMAIL } from "@/lib/site";
 import { formatEventDateRange } from "@/lib/tickets";
+import { createServiceClient } from "./supabase/server";
 
 type EmailTicket = {
   code: string;
@@ -124,6 +125,28 @@ function assertResendSuccess(
     );
   }
 }
+
+export async function markTicketEmailDelivery(
+  orderId: string,
+  status: "sent" | "failed" | "skipped",
+  error?: string,
+  supabaseClient?: ReturnType<typeof createServiceClient>,
+) {
+  const supabase = supabaseClient ?? createServiceClient();
+  const { error: updateError } = await supabase.rpc(
+    "ticketing_mark_ticket_email_delivery",
+    {
+      p_order_id: orderId,
+      p_status: status,
+      p_error: error ?? null,
+    },
+  );
+
+  if (updateError) {
+    throw updateError;
+  }
+}
+
 
 export function renderTicketEmail(input: TicketEmailInput) {
   const eventDate = escapeHtml(

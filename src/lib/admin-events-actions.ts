@@ -477,33 +477,11 @@ export async function publishCurrentEventAction(formData: FormData) {
   await requireAdmin();
 
   const eventId = String(formData.get("eventId") ?? "");
-  const archivePrevious = formData.get("archive_previous") === "on";
   const { supabase } = await createSessionAuthClient();
   const { error } = await supabase.rpc("ticketing_publish_current_event", {
     p_event_id: eventId,
-    p_archive_previous: archivePrevious,
+    p_archive_previous: true,
   });
-
-  if (error) {
-    throw error;
-  }
-
-  revalidatePath("/");
-  revalidatePath("/event-info");
-  revalidatePath("/admin/events");
-  revalidatePath(`/admin/events/${eventId}`);
-  redirect(`/admin/events/${eventId}`);
-}
-
-export async function archiveEventAction(formData: FormData) {
-  await requireAdmin();
-
-  const eventId = String(formData.get("eventId") ?? "");
-  const { supabase } = await createSessionAuthClient();
-  const { error } = await supabase
-    .from("ticketing_events")
-    .update({ status: "archived", is_current: false })
-    .eq("id", eventId);
 
   if (error) {
     throw error;
