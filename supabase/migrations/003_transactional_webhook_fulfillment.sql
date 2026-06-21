@@ -581,11 +581,6 @@ begin
   if not found then
     raise exception 'Order % not found', p_order_id;
   end if;
-
-  if p_status in ('sent', 'skipped') then
-    delete from public.ticketing_ticket_email_secrets
-    where ticketing_ticket_email_secrets.order_id = p_order_id;
-  end if;
 end;
 $$;
 
