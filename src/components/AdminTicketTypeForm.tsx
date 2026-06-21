@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import type { AdminMutationState } from "@/lib/admin-events-actions";
 import type { Database } from "@/lib/database.types";
 import { formatSydneyDateTimeLocal } from "@/lib/event-time";
+import { useActionToast } from "@/hooks/use-action-toast";
 
 type TicketTypeRow =
   Database["public"]["Tables"]["ticketing_ticket_types"]["Row"];
@@ -27,6 +28,8 @@ export function AdminTicketTypeForm({
 }: AdminTicketTypeFormProps) {
   const [state, formAction, isPending] = useActionState(action, initialState);
   const isEditing = Boolean(ticketType);
+
+  useActionToast(state, isPending);
 
   return (
     <form action={formAction} className="grid gap-4">
@@ -148,13 +151,6 @@ export function AdminTicketTypeForm({
         />
         Active
       </label>
-
-      {!isPending && state.error ? (
-        <p className="text-sm text-red-300">{state.error}</p>
-      ) : null}
-      {!isPending && state.success ? (
-        <p className="text-sm text-emerald-300">{state.success}</p>
-      ) : null}
 
       <button
         type="submit"

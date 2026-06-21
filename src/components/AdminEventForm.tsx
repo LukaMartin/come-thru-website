@@ -5,6 +5,7 @@ import { useActionState } from "react";
 import type { AdminMutationState } from "@/lib/admin-events-actions";
 import type { Database } from "@/lib/database.types";
 import { formatSydneyDateTimeLocal } from "@/lib/event-time";
+import { useActionToast } from "@/hooks/use-action-toast";
 
 type EventRow = Database["public"]["Tables"]["ticketing_events"]["Row"];
 
@@ -29,6 +30,8 @@ const labelClass = "grid gap-2 text-sm text-[#f3eadb]/72";
 export function AdminEventForm({ action, event, mode }: AdminEventFormProps) {
   const [state, formAction, isPending] = useActionState(action, initialState);
   const previewUrl = event?.hero_image_url?.trim();
+
+  useActionToast(state, isPending);
 
   return (
     <form action={formAction} className="grid gap-5">
@@ -249,13 +252,6 @@ export function AdminEventForm({ action, event, mode }: AdminEventFormProps) {
           Free event
         </label>
       </div>
-
-      {!isPending && state.error ? (
-        <p className="text-sm text-red-300">{state.error}</p>
-      ) : null}
-      {!isPending && state.success ? (
-        <p className="text-sm text-emerald-300">{state.success}</p>
-      ) : null}
 
       <button
         type="submit"

@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import * as Sentry from "@sentry/nextjs";
 import AdminOrderCard from "@/components/AdminOrderCard";
 import { TbSearch } from "react-icons/tb";
 import { twMerge } from "tailwind-merge";
+import toast from "react-hot-toast";
 
 export type OrderStatus = "paid" | "refunded";
 
@@ -38,13 +39,7 @@ export function AdminEventOrders({
   const [orderPage, setOrderPage] = useState(1);
   const [orders, setOrders] = useState(initialOrders);
   const [refundingOrderId, setRefundingOrderId] = useState<string | null>(null);
-  const [refundErrorByOrderId, setRefundErrorByOrderId] = useState<
-    Partial<Record<string, string>>
-  >({});
   const [resendingOrderId, setResendingOrderId] = useState<string | null>(null);
-  const [resendErrorByOrderId, setResendErrorByOrderId] = useState<
-    Partial<Record<string, string>>
-  >({});
   const [searchQuery, setSearchQuery] = useState("");
   const normalizedSearchQuery = searchQuery.trim().toLowerCase();
   const filteredOrders = useMemo(() => {
@@ -64,13 +59,8 @@ export function AdminEventOrders({
     orderPage * ordersPerPage,
   );
 
-  useEffect(() => {
-    setOrderPage(1);
-  }, [searchQuery]);
-
   async function refundOrder(order: AdminEventOrder) {
     setRefundingOrderId(order.id);
-    setRefundErrorByOrderId((current) => ({ ...current, [order.id]: "" }));
 
     try {
       if (!order.stripePaymentIntentId) {
@@ -98,13 +88,13 @@ export function AdminEventOrders({
             : currentOrder,
         ),
       );
+
+      toast.success(`${order.reference} has been refunded.`);
     } catch (error) {
       Sentry.captureException(error);
-      setRefundErrorByOrderId((current) => ({
-        ...current,
-        [order.id]:
-          error instanceof Error ? error.message : "Could not refund order.",
-      }));
+      toast.error(
+        error instanceof Error ? error.message : "Could not refund order.",
+      );
     } finally {
       setRefundingOrderId(null);
     }
@@ -112,7 +102,6 @@ export function AdminEventOrders({
 
   async function resendTickets(order: AdminEventOrder) {
     setResendingOrderId(order.id);
-    setResendErrorByOrderId((current) => ({ ...current, [order.id]: "" }));
 
     try {
       const response = await fetch("/api/resend-tickets", {
@@ -126,15 +115,16 @@ export function AdminEventOrders({
       });
 
       if (!response.ok) {
+        toast.error("Failed to resend tickets.");
         throw new Error("Failed to resend tickets.");
       }
+
+      toast.success(`${order.reference} tickets have been resent`);
     } catch (error) {
       Sentry.captureException(error);
-      setResendErrorByOrderId((current) => ({
-        ...current,
-        [order.id]:
-          error instanceof Error ? error.message : "Could not resend tickets.",
-      }));
+      toast.error(
+        error instanceof Error ? error.message : "Could not resend tickets.",
+      );
     } finally {
       setResendingOrderId(null);
     }
@@ -207,10 +197,8 @@ export function AdminEventOrders({
           order={order}
           onRefund={(selectedOrder) => void refundOrder(selectedOrder)}
           isRefunding={refundingOrderId === order.id}
-          refundError={refundErrorByOrderId[order.id]}
           onResend={(selectedOrder) => void resendTickets(selectedOrder)}
           isResending={resendingOrderId === order.id}
-          resendError={resendErrorByOrderId[order.id]}
         />
       ))}
 

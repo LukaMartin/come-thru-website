@@ -7,6 +7,7 @@ import type {
   updateGalleryImageAction,
 } from "@/lib/admin-gallery-actions";
 import type { Database } from "@/lib/database.types";
+import { useActionToast } from "@/hooks/use-action-toast";
 
 type GalleryImageRow =
   Database["public"]["Tables"]["site_gallery_images"]["Row"];
@@ -29,6 +30,8 @@ export function AdminGalleryImageForm({
 }: AdminGalleryImageFormProps) {
   const [state, formAction, isPending] = useActionState(action, initialState);
   const previewUrl = image?.image_url.trim();
+
+  useActionToast(state, isPending);
 
   return (
     <form action={formAction} className="grid gap-5 md:grid-cols-[16rem_1fr]">
@@ -92,13 +95,6 @@ export function AdminGalleryImageForm({
           />
           Show this slot on the homepage
         </label>
-
-        {!isPending && state.error ? (
-          <p className="text-sm text-red-300">{state.error}</p>
-        ) : null}
-        {!isPending && state.success ? (
-          <p className="text-sm text-emerald-300">{state.success}</p>
-        ) : null}
 
         <button
           type="submit"

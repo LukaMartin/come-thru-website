@@ -37,11 +37,9 @@ function getStatusPillClass(status: OrderStatus) {
 export default function AdminOrderCard({
   order,
   onRefund,
-  refundError,
   isRefunding,
   onResend,
   isResending,
-  resendError,
 }: AdminOrderCardProps) {
   const [isOpen, setIsOpen] = useState(false);
   const panelId = useId();
@@ -182,11 +180,6 @@ export default function AdminOrderCard({
                   />
                   {isResending ? "Resending" : "Resend"}
                 </button>
-                {resendError ? (
-                  <p className="mt-2 text-xs leading-5 text-red-200">
-                    {resendError}
-                  </p>
-                ) : null}
               </div>
               <div>
                 <button
@@ -212,11 +205,6 @@ export default function AdminOrderCard({
                         ? "Refund"
                         : "No payment"}
                 </button>
-                {refundError ? (
-                  <p className="mt-2 text-xs leading-5 text-red-200">
-                    {refundError}
-                  </p>
-                ) : null}
               </div>
             </div>
           </div>

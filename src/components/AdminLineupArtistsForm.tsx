@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import type { AdminMutationState } from "@/lib/admin-events-actions";
 import type { Database } from "@/lib/database.types";
+import { useActionToast } from "@/hooks/use-action-toast";
 
 type LineupArtistRow = Database["public"]["Tables"]["lineup_artists"]["Row"];
 
@@ -28,6 +29,8 @@ export function AdminLineupArtistsForm({
   const artistsBySlot = new Map(
     lineupArtists.map((artist) => [artist.slot, artist]),
   );
+
+  useActionToast(state, isPending);
 
   return (
     <form action={formAction} className="grid gap-5">
@@ -71,13 +74,6 @@ export function AdminLineupArtistsForm({
         Fill slots from 0 upward. A slot with a name is saved, and an empty name
         deletes that slot.
       </p>
-
-      {!isPending && state.error ? (
-        <p className="text-sm text-red-300">{state.error}</p>
-      ) : null}
-      {!isPending && state.success ? (
-        <p className="text-sm text-emerald-300">{state.success}</p>
-      ) : null}
 
       <button
         type="submit"
