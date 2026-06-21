@@ -355,66 +355,69 @@ async function handlePaymentIntentSucceeded(
   }
 
   if (fulfilledTickets.length > 0) {
-    if (!buyerEmail) {
-      try {
-        await markTicketEmailDelivery(order.id, "skipped", undefined, supabase);
-      } catch (error) {
-        Sentry.captureException(error, {
-          tags: {
-            "app.area": "stripe_webhook",
-            "email.delivery_status": "skipped",
-            "order.id": order.id,
-            "stripe.event_type": webhookEventType,
-            "stripe.payment_intent_id": paymentIntent.id,
-            "stripe.webhook_event_id": webhookEventId,
-          },
-        });
-      }
-    } else {
-      try {
-        const emailTickets = await Promise.all(
-          fulfilledTickets.map(async (ticket) => {
-            const ticketType = ticketTypeById.get(ticket.ticket_type_id);
+    try {
+      const emailTickets = await Promise.all(
+        fulfilledTickets.map(async (ticket) => {
+          const ticketType = ticketTypeById.get(ticket.ticket_type_id);
 
-            if (!ticketType) {
-              throw new Error(
-                "Unable to match created ticket to its ticket type.",
-              );
-            }
-
-            const ticketSecret = decryptTicketSecret(
-              ticket.encrypted_ticket_secret,
+          if (!ticketType) {
+            throw new Error(
+              "Unable to match created ticket to its ticket type.",
             );
+          }
 
-            return {
-              code: ticket.ticket_code,
-              ticketNumber: ticket.ticket_number,
-              qrDataUrl: await createTicketQrDataUrl(
-                ticket.ticket_code,
-                ticketSecret,
-              ),
-              ticketName: ticketType.name,
-              ticketUrl: getTicketUrl(ticket.ticket_code, ticketSecret),
-            };
-          }),
+          const ticketSecret = decryptTicketSecret(
+            ticket.encrypted_ticket_secret,
+          );
+
+          return {
+            code: ticket.ticket_code,
+            ticketNumber: ticket.ticket_number,
+            qrDataUrl: await createTicketQrDataUrl(
+              ticket.ticket_code,
+              ticketSecret,
+            ),
+            ticketName: ticketType.name,
+            ticketUrl: getTicketUrl(ticket.ticket_code, ticketSecret),
+          };
+        }),
+      );
+
+      await sendTicketEmail({
+        to: buyerEmail,
+        eventName: fulfillment.event_name,
+        venue: fulfillment.venue,
+        startsAt: fulfillment.starts_at,
+        endsAt: fulfillment.ends_at,
+        orderTotalCents: fulfillment.order_total_cents,
+        orderReference: fulfillment.order_reference,
+        currency: fulfillment.order_currency,
+        tickets: emailTickets,
+        venueAddress: fulfillment.venue_address ?? "",
+        ticketColours: fulfillment.ticket_colours ?? "",
+      });
+      await markTicketEmailDelivery(order.id, "sent", undefined, supabase);
+    } catch (error) {
+      Sentry.captureException(error, {
+        tags: {
+          "app.area": "stripe_webhook",
+          "email.delivery_status": "failed",
+          "order.id": order.id,
+          "stripe.event_type": webhookEventType,
+          "stripe.payment_intent_id": paymentIntent.id,
+          "stripe.webhook_event_id": webhookEventId,
+        },
+      });
+
+      try {
+        await markTicketEmailDelivery(
+          order.id,
+          "failed",
+          error instanceof Error ? error.message : "Ticket email failed.",
+          supabase,
         );
-
-        await sendTicketEmail({
-          to: buyerEmail,
-          eventName: fulfillment.event_name,
-          venue: fulfillment.venue,
-          startsAt: fulfillment.starts_at,
-          endsAt: fulfillment.ends_at,
-          orderTotalCents: fulfillment.order_total_cents,
-          orderReference: fulfillment.order_reference,
-          currency: fulfillment.order_currency,
-          tickets: emailTickets,
-          venueAddress: fulfillment.venue_address ?? "",
-          ticketColours: fulfillment.ticket_colours ?? "",
-        });
-        await markTicketEmailDelivery(order.id, "sent", undefined, supabase);
-      } catch (error) {
-        Sentry.captureException(error, {
+      } catch (deliveryError) {
+        Sentry.captureException(deliveryError, {
           tags: {
             "app.area": "stripe_webhook",
             "email.delivery_status": "failed",
@@ -424,26 +427,6 @@ async function handlePaymentIntentSucceeded(
             "stripe.webhook_event_id": webhookEventId,
           },
         });
-
-        try {
-          await markTicketEmailDelivery(
-            order.id,
-            "failed",
-            error instanceof Error ? error.message : "Ticket email failed.",
-            supabase,
-          );
-        } catch (deliveryError) {
-          Sentry.captureException(deliveryError, {
-            tags: {
-              "app.area": "stripe_webhook",
-              "email.delivery_status": "failed",
-              "order.id": order.id,
-              "stripe.event_type": webhookEventType,
-              "stripe.payment_intent_id": paymentIntent.id,
-              "stripe.webhook_event_id": webhookEventId,
-            },
-          });
-        }
       }
     }
   }
