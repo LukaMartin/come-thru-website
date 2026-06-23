@@ -302,6 +302,68 @@ export type Database = {
           Database["public"]["Tables"]["lineup_artists"]["Insert"]
         >;
       };
+      support_threads: {
+        Row: {
+          id: string;
+          reference_number: number;
+          customer_email: string;
+          customer_name: string | null;
+          subject: string;
+          status: "new" | "needs_reply" | "resolved";
+          source: "contact_form";
+          last_message_at: string;
+          closed_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          reference_number?: number;
+          customer_email: string;
+          customer_name?: string | null;
+          subject: string;
+          status?: "new" | "needs_reply" | "resolved";
+          source?: "contact_form";
+          last_message_at?: string;
+          closed_at?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["support_threads"]["Insert"]
+        >;
+      };
+      support_messages: {
+        Row: {
+          id: string;
+          thread_id: string;
+          direction: "inbound" | "outbound" | "note";
+          author_email: string | null;
+          author_name: string | null;
+          subject: string | null;
+          body_text: string;
+          body_html: string | null;
+          provider: string | null;
+          provider_message_id: string | null;
+          metadata: Json;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          thread_id: string;
+          direction: "inbound" | "outbound" | "note";
+          author_email?: string | null;
+          author_name?: string | null;
+          subject?: string | null;
+          body_text: string;
+          body_html?: string | null;
+          provider?: string | null;
+          provider_message_id?: string | null;
+          metadata?: Json;
+          created_at?: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["support_messages"]["Insert"]
+        >;
+      };
     };
     Functions: {
       ticketing_cancel_checkout_reservation: {

@@ -57,6 +57,12 @@ export default async function AdminEventsPage() {
           </div>
           <div className="flex flex-wrap gap-3">
             <Link
+              href="/admin/support"
+              className="rounded-md bg-[#f8f0e3] px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-white"
+            >
+              Support
+            </Link>
+            <Link
               href="/admin/gallery"
               className="rounded-md bg-[#f8f0e3] px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-white"
             >

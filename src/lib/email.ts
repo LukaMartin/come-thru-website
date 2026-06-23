@@ -34,6 +34,12 @@ type SendContactEmailInput = {
   message: string;
 };
 
+type SendSupportReplyEmailInput = {
+  to: string;
+  subject: string;
+  bodyText: string;
+};
+
 const interRegularPath = path.join(
   process.cwd(),
   "node_modules",
@@ -109,9 +115,31 @@ export async function sendContactEmail(input: SendContactEmailInput) {
   assertResendSuccess(result, "contact email");
 }
 
+export async function sendSupportReplyEmail(input: SendSupportReplyEmailInput) {
+  const apiKey = process.env.RESEND_API_KEY;
+
+  if (!apiKey) {
+    throw new Error("RESEND_API_KEY is required to send support replies.");
+  }
+
+  const resend = new Resend(apiKey);
+  const result = await resend.emails.send({
+    from: withDisplayName(SUPPORT_EMAIL, "Come Thru Support"),
+    to: input.to,
+    replyTo: SUPPORT_EMAIL,
+    subject: input.subject,
+    html: renderSupportReplyEmail(input.bodyText),
+    text: input.bodyText,
+  });
+
+  assertResendSuccess(result, "support reply");
+
+  return getResendEmailId(result);
+}
+
 function assertResendSuccess(
   result: unknown,
-  description: "ticket email" | "contact email",
+  description: "ticket email" | "contact email" | "support reply",
 ) {
   const resendResult = result as {
     error?: { message?: string; name?: string } | null;
@@ -124,6 +152,14 @@ function assertResendSuccess(
         `Failed to send ${description}.`,
     );
   }
+}
+
+function getResendEmailId(result: unknown) {
+  const resendResult = result as {
+    data?: { id?: string } | null;
+  };
+
+  return resendResult.data?.id ?? null;
 }
 
 export async function markTicketEmailDelivery(
@@ -228,6 +264,18 @@ function renderContactEmailText(input: SendContactEmailInput) {
     "",
     input.message,
   ].join("\n");
+}
+
+function renderSupportReplyEmail(bodyText: string) {
+  const messageHtml = escapeHtml(bodyText).replaceAll("\n", "<br />");
+
+  return `
+    <div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;padding:24px;color:#111;">
+      <div style="font-size:16px;line-height:1.6;">
+        ${messageHtml}
+      </div>
+    </div>
+  `;
 }
 
 function withDisplayName(from: string, displayName: string) {

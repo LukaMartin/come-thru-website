@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { sendContactEmail } from "@/lib/email";
+import { createSupportThreadWithMessage } from "@/lib/support-server";
 import * as Sentry from "@sentry/nextjs";
 
 export const dynamic = "force-dynamic";
@@ -40,8 +40,19 @@ export async function POST(request: Request) {
   }
 
   try {
-    await sendContactEmail(parsed.data);
-    return Response.json({ ok: true });
+    const thread = await createSupportThreadWithMessage({
+      customerEmail: parsed.data.email,
+      customerName: parsed.data.name,
+      subject: parsed.data.subject,
+      bodyText: parsed.data.message,
+      source: "contact_form",
+      provider: "contact_form",
+    });
+
+    return Response.json({
+      ok: true,
+      referenceNumber: thread.reference_number,
+    });
   } catch (error) {
     Sentry.captureException(error, {
       tags: {
