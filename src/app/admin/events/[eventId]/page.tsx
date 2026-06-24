@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { FiArrowLeft } from "react-icons/fi";
 import {
   createTicketTypeAction,
   publishCurrentEventAction,
@@ -14,6 +15,8 @@ import { AdminEventForm } from "@/components/AdminEventForm";
 import { AdminLineupArtistsForm } from "@/components/AdminLineupArtistsForm";
 import { AdminTicketTypeCard } from "@/components/AdminTicketTypeCard";
 import { AdminTicketTypeForm } from "@/components/AdminTicketTypeForm";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { AdminShell } from "@/components/admin/AdminShell";
 import { createSessionAuthClient, requireAdmin } from "@/lib/admin-auth";
 import type { Database } from "@/lib/database.types";
 import { formatEventDateRange } from "@/lib/tickets";
@@ -144,34 +147,23 @@ export default async function AdminEventPage({ params }: AdminEventPageProps) {
   }));
 
   return (
-    <main className="relative min-h-dvh overflow-hidden bg-[#070605] px-5 py-8 text-[#f8f0e3] sm:px-6">
-      <div className="pointer-events-none fixed inset-0 z-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.045)_0_1px,transparent_1px_18px)]" />
-      <div className="relative z-10 mx-auto grid w-full max-w-6xl gap-8">
-        <header className="flex flex-col border-b border-[#f3eadb]/12 pb-6">
-          <div className="flex items-center justify-between">
-            <h1 className="text-5xl font-black uppercase leading-none tracking-[-0.06em]">
-              {event.name}
-            </h1>
-            <Link
-              href="/admin/events"
-              className="group relative flex w-fit items-center gap-1.5 pb-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#d7c7ad] transition-colors duration-300 hover:text-[#f8f0e3] after:absolute after:bottom-0 after:right-0 after:h-px after:w-[calc(100%-1.25rem)] after:bg-current after:transition-all after:duration-400 after:ease-out hover:after:w-full"
-            >
-              <span className="hover:-mr-5 opacity-0 transition-all duration-300 ease-out group-hover:mr-0 group-hover:opacity-100">
-                &larr;
-              </span>
-              <span>Back to events</span>
-            </Link>
-          </div>
+    <AdminShell>
+      <AdminPageHeader
+        eyebrow="Event editor"
+        title={event.name}
+        description={`${formatEventDateRange(event.starts_at, event.ends_at)} / ${event.venue}`}
+        actions={
+          <Link
+            href="/admin/events"
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-admin-border bg-admin-surface px-4 py-2.5 text-sm font-medium text-admin-muted transition hover:border-admin-border-strong hover:bg-admin-surface-elevated hover:text-admin-text"
+          >
+            <FiArrowLeft aria-hidden className="size-4" />
+            Back to events
+          </Link>
+        }
+      />
 
-          <div>
-            <p className="mt-4 text-sm text-[#f3eadb]/64">
-              {formatEventDateRange(event.starts_at, event.ends_at)}
-              {" / "}
-              {event.venue}
-            </p>
-          </div>
-        </header>
-
+      <section>
         <AdminEventDashboard
           status={event.status}
           isCurrent={event.is_current}
@@ -185,7 +177,7 @@ export default async function AdminEventPage({ params }: AdminEventPageProps) {
                 <input type="hidden" name="eventId" value={event.id} />
                 <button
                   type="submit"
-                  className="w-full rounded-md bg-[#f8f0e3] px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-white"
+                  className="w-full rounded-xl bg-admin-primary px-4 py-2.5 text-sm font-medium text-admin-primary-text transition hover:bg-white"
                 >
                   Publish as current
                 </button>
@@ -205,9 +197,9 @@ export default async function AdminEventPage({ params }: AdminEventPageProps) {
             <div className="grid gap-4">
               <div
                 key="add-ticket-type"
-                className="border border-[#f3eadb]/14 bg-black/20 p-5 md:p-6"
+                className="rounded-2xl border border-admin-border bg-black/10 p-5"
               >
-                <h3 className="mb-5 text-xl font-black uppercase tracking-[-0.03em]">
+                <h3 className="mb-5 text-base font-semibold tracking-[-0.03em] text-admin-text">
                   Add ticket type
                 </h3>
                 <AdminTicketTypeForm action={createTicketType} />
@@ -226,7 +218,7 @@ export default async function AdminEventPage({ params }: AdminEventPageProps) {
             </div>
           }
         />
-      </div>
-    </main>
+      </section>
+    </AdminShell>
   );
 }

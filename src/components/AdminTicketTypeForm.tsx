@@ -19,8 +19,8 @@ type AdminTicketTypeFormProps = {
 
 const initialState: AdminMutationState = {};
 const inputClass =
-  "min-w-0 w-full border border-[#f3eadb]/14 bg-black/35 px-4 py-3 text-sm text-[#f8f0e3] outline-none transition [color-scheme:dark] focus:border-[#d7c7ad]/70";
-const labelClass = "grid min-w-0 gap-2 text-sm text-[#f3eadb]/72";
+  "min-w-0 w-full rounded-xl border border-admin-border bg-black/20 px-4 py-3 text-sm text-admin-text outline-none transition [color-scheme:dark] placeholder:text-admin-subtle focus:border-admin-border-strong focus:bg-black/30";
+const labelClass = "grid min-w-0 gap-2 text-sm font-medium text-admin-muted";
 
 export function AdminTicketTypeForm({
   action,
@@ -142,12 +142,12 @@ export function AdminTicketTypeForm({
         </label>
       </div>
 
-      <label className="flex items-center gap-3 text-sm text-[#f3eadb]/72">
+      <label className="flex items-center gap-3 text-sm font-medium text-admin-muted">
         <input
           name="active"
           type="checkbox"
           defaultChecked={ticketType?.active ?? true}
-          className="size-4 accent-[#f8f0e3]"
+          className="size-4 accent-admin-primary"
         />
         Active
       </label>
@@ -155,7 +155,7 @@ export function AdminTicketTypeForm({
       <button
         type="submit"
         disabled={isPending}
-        className="w-fit rounded-md bg-[#f8f0e3] px-6 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-white disabled:opacity-60"
+        className="w-fit rounded-xl bg-admin-primary px-5 py-2.5 text-sm font-medium text-admin-primary-text transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isPending
           ? "Saving..."

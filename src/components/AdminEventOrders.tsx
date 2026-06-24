@@ -3,7 +3,12 @@
 import { useMemo, useState } from "react";
 import * as Sentry from "@sentry/nextjs";
 import AdminOrderCard from "@/components/AdminOrderCard";
-import { TbSearch } from "react-icons/tb";
+import {
+  FiCheckCircle,
+  FiRotateCcw,
+  FiSearch,
+  FiShoppingBag,
+} from "react-icons/fi";
 import { twMerge } from "tailwind-merge";
 import toast from "react-hot-toast";
 
@@ -42,6 +47,19 @@ export function AdminEventOrders({
   const [resendingOrderId, setResendingOrderId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const normalizedSearchQuery = searchQuery.trim().toLowerCase();
+  const orderStats = [
+    { label: "Total orders", value: orders.length, icon: FiShoppingBag },
+    {
+      label: "Paid",
+      value: orders.filter((order) => order.status === "paid").length,
+      icon: FiCheckCircle,
+    },
+    {
+      label: "Refunded",
+      value: orders.filter((order) => order.status === "refunded").length,
+      icon: FiRotateCcw,
+    },
+  ];
   const filteredOrders = useMemo(() => {
     if (!normalizedSearchQuery) {
       return orders;
@@ -133,27 +151,24 @@ export function AdminEventOrders({
   return (
     <div className="grid gap-4">
       <div className="grid gap-3 sm:grid-cols-3">
-        {[
-          { label: "Total orders", value: orders.length },
-          {
-            label: "Paid",
-            value: orders.filter((order) => order.status === "paid").length,
-          },
-          {
-            label: "Refunded",
-            value: orders.filter((order) => order.status === "refunded").length,
-          },
-        ].map((stat) => (
+        {orderStats.map((stat) => (
           <div
             key={stat.label}
-            className="border border-[#f3eadb]/14 bg-black/20 p-4 transition-colors duration-300 hover:border-[#f3eadb]/24 hover:bg-black/30 md:p-5"
+            className="rounded-2xl border border-admin-border bg-admin-surface p-4 shadow-sm shadow-black/20 transition hover:border-admin-border-strong hover:bg-admin-surface-elevated"
           >
-            <p className="text-[0.6rem] uppercase tracking-[0.24em] text-[#d7c7ad]/70">
-              {stat.label}
-            </p>
-            <p className="mt-3 text-3xl font-black leading-none tracking-tighter text-[#f8f0e3]">
-              {stat.value}
-            </p>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-medium text-admin-muted">
+                  {stat.label}
+                </p>
+                <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-admin-text">
+                  {stat.value}
+                </p>
+              </div>
+              <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-admin-border bg-admin-surface-elevated text-admin-muted">
+                <stat.icon aria-hidden className="size-4" />
+              </span>
+            </div>
           </div>
         ))}
       </div>
@@ -164,18 +179,21 @@ export function AdminEventOrders({
             id="order-search"
             type="search"
             value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
+            onChange={(event) => {
+              setSearchQuery(event.target.value);
+              setOrderPage(1);
+            }}
             placeholder="Search by name or email"
             className={twMerge(
-              "w-full rounded-md border border-[#f3eadb]/14 bg-black/20 px-3 py-2.5 pr-10 text-sm font-medium text-[#f8f0e3] outline-none transition placeholder:text-[#f3eadb]/38 focus:border-[#f3eadb]/38 focus:bg-black/35",
+              "w-full rounded-xl border border-admin-border bg-black/20 px-3 py-2.5 pr-10 text-sm text-admin-text outline-none transition placeholder:text-admin-subtle focus:border-admin-border-strong focus:bg-black/30",
               searchQuery && "pr-3",
             )}
             autoComplete="off"
           />
-          <TbSearch
+          <FiSearch
             aria-hidden="true"
             className={twMerge(
-              "pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-[#f3eadb]/45",
+              "pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-admin-subtle",
               searchQuery && "hidden",
             )}
           />
@@ -184,7 +202,7 @@ export function AdminEventOrders({
           <button
             type="button"
             onClick={() => setSearchQuery("")}
-            className="rounded-md border border-[#f3eadb]/14 px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[#f8f0e3] transition hover:bg-[#f3eadb]/8"
+            className="rounded-xl border border-admin-border px-3 py-2 text-xs font-medium text-admin-muted transition hover:bg-admin-surface-elevated hover:text-admin-text"
           >
             Clear
           </button>
@@ -203,19 +221,19 @@ export function AdminEventOrders({
       ))}
 
       {orders.length === 0 ? (
-        <div className="border border-[#f3eadb]/14 bg-black/20 p-6 text-sm text-[#f3eadb]/62">
+        <div className="rounded-2xl border border-admin-border bg-black/10 p-6 text-sm text-admin-muted">
           No paid or refunded orders for this event yet.
         </div>
       ) : null}
 
       {orders.length > 0 && filteredOrders.length === 0 ? (
-        <div className="border border-[#f3eadb]/14 bg-black/20 p-6 text-sm text-[#f3eadb]/62">
+        <div className="rounded-2xl border border-admin-border bg-black/10 p-6 text-sm text-admin-muted">
           No orders match that name or email.
         </div>
       ) : null}
 
       {filteredOrders.length > 0 ? (
-        <div className="flex flex-col gap-3 border border-[#f3eadb]/10 bg-black/20 p-3 text-sm text-[#f3eadb]/62 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 rounded-2xl border border-admin-border bg-admin-surface p-3 text-sm text-admin-muted shadow-sm shadow-black/20 sm:flex-row sm:items-center sm:justify-between">
           <p>
             Showing {(orderPage - 1) * ordersPerPage + 1}-
             {Math.min(orderPage * ordersPerPage, filteredOrders.length)} of{" "}
@@ -226,7 +244,7 @@ export function AdminEventOrders({
               type="button"
               onClick={() => setOrderPage((page) => Math.max(1, page - 1))}
               disabled={orderPage === 1}
-              className="rounded-md border border-[#f3eadb]/14 px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[#f8f0e3] transition hover:bg-[#f3eadb]/8 disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-xl border border-admin-border px-3 py-2 text-xs font-medium text-admin-muted transition hover:bg-admin-surface-elevated hover:text-admin-text disabled:cursor-not-allowed disabled:opacity-40"
             >
               Previous
             </button>
@@ -236,7 +254,7 @@ export function AdminEventOrders({
                 setOrderPage((page) => Math.min(totalOrderPages, page + 1))
               }
               disabled={orderPage === totalOrderPages}
-              className="rounded-md border border-[#f3eadb]/14 px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[#f8f0e3] transition hover:bg-[#f3eadb]/8 disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-xl border border-admin-border px-3 py-2 text-xs font-medium text-admin-muted transition hover:bg-admin-surface-elevated hover:text-admin-text disabled:cursor-not-allowed disabled:opacity-40"
             >
               Next
             </button>

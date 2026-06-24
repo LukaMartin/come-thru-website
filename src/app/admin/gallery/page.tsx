@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { updateGalleryImageAction } from "@/lib/admin-gallery-actions";
 import { AdminGalleryImageForm } from "@/components/AdminGalleryImageForm";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { AdminShell } from "@/components/admin/AdminShell";
 import { createSessionAuthClient, requireAdmin } from "@/lib/admin-auth";
 import type { Database } from "@/lib/database.types";
 
@@ -34,60 +35,53 @@ export default async function AdminGalleryPage() {
   );
 
   return (
-    <main className="relative min-h-dvh overflow-hidden bg-[#070605] px-5 py-8 text-[#f8f0e3] sm:px-6">
-      <div className="pointer-events-none fixed inset-0 z-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.045)_0_1px,transparent_1px_18px)]" />
-      <div className="relative z-10 mx-auto grid w-full max-w-6xl gap-8">
-        <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[#f3eadb]/12 pb-6">
-          <div>
-            <h1 className="mt-4 text-5xl font-black uppercase leading-none tracking-[-0.06em]">
-              Gallery
-            </h1>
-            <p className="mt-4 max-w-2xl text-sm leading-6 text-[#f3eadb]/64">
-              Upload homepage gallery images to Vercel Blob.
-            </p>
-          </div>
-          <Link
-            href="/admin/events"
-            className="group relative flex w-fit items-center gap-1.5 pb-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#d7c7ad] transition-colors duration-300 hover:text-[#f8f0e3] after:absolute after:bottom-0 after:right-0 after:h-px after:w-[calc(100%-1.25rem)] after:bg-current after:transition-all after:duration-400 after:ease-out hover:after:w-full"
-          >
-            <span className="hover:-mr-5 opacity-0 transition-all duration-300 ease-out group-hover:mr-0 group-hover:opacity-100">
-              &larr;
-            </span>
-            <span>Back to events</span>
-          </Link>
-        </header>
+    <AdminShell>
+      <AdminPageHeader
+        eyebrow="Content"
+        title="Gallery"
+        description="Manage the four homepage gallery slots. Uploads are optimized and stored in Vercel Blob."
+      />
 
-        <section className="grid gap-5">
-          {gallerySlots.map((slot) => (
+      <section className="grid gap-4">
+        {gallerySlots.map((slot) => {
+          const image = imagesBySlot.get(slot);
+          const isVisible = image?.is_active !== false;
+
+          return (
             <div
               key={slot}
-              className="border border-[#f3eadb]/14 bg-[#080706] p-5 md:p-6"
+              className="rounded-2xl border border-admin-border bg-admin-surface p-4 shadow-sm shadow-black/20"
             >
-              <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+              <div className="mb-4 flex items-center justify-between gap-3 border-b border-admin-border pb-3">
                 <div>
-                  <p className="text-[0.68rem] uppercase tracking-[0.35em] text-[#d7c7ad]">
+                  <p className="text-xs font-medium text-admin-subtle">
                     Slot {slot}
                   </p>
-                  <h2 className="mt-2 text-2xl font-black uppercase tracking-[-0.04em]">
+                  <h2 className="mt-1 text-base font-semibold tracking-[-0.03em] text-admin-text">
                     Homepage gallery image
                   </h2>
                 </div>
-                <p className="text-sm text-[#f3eadb]/50">
-                  {imagesBySlot.get(slot)?.is_active === false
-                    ? "Hidden"
-                    : "Visible"}
-                </p>
+                <span
+                  className={[
+                    "rounded-full border px-2.5 py-1 text-xs font-medium",
+                    isVisible
+                      ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-100"
+                      : "border-zinc-500/25 bg-zinc-500/10 text-zinc-300",
+                  ].join(" ")}
+                >
+                  {isVisible ? "Visible" : "Hidden"}
+                </span>
               </div>
 
               <AdminGalleryImageForm
                 action={updateGalleryImageAction}
-                image={imagesBySlot.get(slot)}
+                image={image}
                 slot={slot}
               />
             </div>
-          ))}
-        </section>
-      </div>
-    </main>
+          );
+        })}
+      </section>
+    </AdminShell>
   );
 }

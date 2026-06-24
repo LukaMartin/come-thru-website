@@ -51,8 +51,10 @@ export default function AdminOrderCard({
 
   return (
     <article
-      className={`border bg-black/20 transition-colors duration-300 ${
-        isOpen ? "border-[#f3eadb]/28 bg-black/30" : "border-[#f3eadb]/14"
+      className={`overflow-hidden rounded-2xl border transition-colors duration-300 ${
+        isOpen
+          ? "border-admin-border-strong bg-admin-surface-elevated"
+          : "border-admin-border bg-black/10"
       }`}
     >
       <button
@@ -60,37 +62,37 @@ export default function AdminOrderCard({
         aria-expanded={isOpen}
         aria-controls={panelId}
         onClick={() => setIsOpen((current) => !current)}
-        className="flex w-full cursor-pointer flex-wrap items-center justify-between gap-4 p-5 text-left outline-none transition-colors duration-300 hover:bg-[#f3eadb]/[0.035] focus-visible:bg-[#f3eadb]/4.5 md:p-6"
+        className="flex w-full cursor-pointer flex-wrap items-center justify-between gap-4 p-5 text-left outline-none transition-colors duration-300 hover:bg-admin-surface-elevated focus-visible:bg-admin-surface-elevated"
       >
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-xl font-black uppercase tracking-[-0.03em]">
+            <h3 className="text-base font-semibold tracking-[-0.03em] text-admin-text">
               {order.reference}
             </h3>
             <span
-              className={`rounded-full border px-2.5 py-1 text-[0.62rem] font-semibold uppercase tracking-[0.16em] ${getStatusPillClass(order.status)}`}
+              className={`rounded-full border px-2.5 py-1 text-xs font-medium capitalize ${getStatusPillClass(order.status)}`}
             >
               {order.status}
             </span>
           </div>
-          <p className="mt-1 truncate text-sm text-[#f3eadb]/58">
+          <p className="mt-1 truncate text-sm text-admin-muted">
             {orderName} / {orderEmail}
           </p>
-          <p className="mt-1 truncate text-xs text-[#f3eadb]/44">
+          <p className="mt-1 truncate text-xs text-admin-subtle">
             {getOrderItemsSummary(order.items)}
           </p>
         </div>
 
         <div className="flex items-center gap-4">
           <div className="hidden text-right sm:block">
-            <p className="text-sm font-bold text-[#f8f0e3]">
+            <p className="text-sm font-semibold text-admin-text">
               {formatMoney(order.totalCents, order.currency)}
             </p>
-            <p className="mt-1 text-[0.65rem] uppercase tracking-[0.18em] text-[#d7c7ad]/62">
+            <p className="mt-1 text-xs text-admin-subtle">
               {formatEventDate(order.placedAt)}
             </p>
           </div>
-          <span className="inline-flex items-center gap-2 rounded-full border border-[#f3eadb]/14 p-2 text-xs font-semibold uppercase tracking-[0.16em] text-[#f3eadb]/64 transition duration-300 hover:border-[#f3eadb]/28 hover:text-[#f8f0e3]">
+          <span className="inline-flex items-center gap-2 rounded-full border border-admin-border p-2 text-xs font-medium text-admin-muted transition duration-300 hover:border-admin-border-strong hover:text-admin-text">
             <FiChevronDown
               aria-hidden="true"
               className={`size-4 transition-transform duration-300 ${
@@ -108,57 +110,55 @@ export default function AdminOrderCard({
         }`}
       >
         <div className="min-h-0 overflow-hidden">
-          <div className="grid gap-5 border-t border-[#f3eadb]/10 p-5 md:grid-cols-[minmax(0,1fr)_13rem] md:p-6">
+          <div className="grid gap-5 border-t border-admin-border p-5 md:grid-cols-[minmax(0,1fr)_13rem]">
             <div className="grid gap-4">
               <div className="grid gap-3 text-sm sm:grid-cols-2">
                 <div>
-                  <p className="text-[0.6rem] uppercase tracking-[0.24em] text-[#d7c7ad]/70">
+                  <p className="text-xs font-medium text-admin-subtle">
                     Order name
                   </p>
-                  <p className="mt-1 font-semibold text-[#f8f0e3]">
+                  <p className="mt-1 font-semibold text-admin-text">
                     {orderName}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[0.6rem] uppercase tracking-[0.24em] text-[#d7c7ad]/70">
+                  <p className="text-xs font-medium text-admin-subtle">
                     Order email
                   </p>
-                  <p className="mt-1 wrap-break-word font-semibold text-[#f8f0e3]">
+                  <p className="mt-1 wrap-break-word font-semibold text-admin-text">
                     {orderEmail}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[0.6rem] uppercase tracking-[0.24em] text-[#d7c7ad]/70">
+                  <p className="text-xs font-medium text-admin-subtle">
                     Placed
                   </p>
-                  <p className="mt-1 font-semibold text-[#f8f0e3]">
+                  <p className="mt-1 font-semibold text-admin-text">
                     {formatEventDate(order.placedAt)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[0.6rem] uppercase tracking-[0.24em] text-[#d7c7ad]/70">
-                    Total
-                  </p>
-                  <p className="mt-1 font-semibold text-[#f8f0e3]">
+                  <p className="text-xs font-medium text-admin-subtle">Total</p>
+                  <p className="mt-1 font-semibold text-admin-text">
                     {formatMoney(order.totalCents, order.currency)}
                   </p>
                 </div>
               </div>
 
               <div>
-                <p className="mb-2 text-[0.6rem] uppercase tracking-[0.24em] text-[#d7c7ad]/70">
+                <p className="mb-2 text-xs font-medium text-admin-subtle">
                   Order items
                 </p>
                 <div className="grid gap-2">
                   {order.items.map((item) => (
                     <div
                       key={`${order.id}-${item.name}`}
-                      className="flex items-center justify-between gap-4 border border-[#f3eadb]/10 bg-black/20 px-3 py-2 text-sm"
+                      className="flex items-center justify-between gap-4 rounded-xl border border-admin-border bg-black/10 px-3 py-2 text-sm"
                     >
-                      <span className="font-semibold text-[#f8f0e3]">
+                      <span className="font-semibold text-admin-text">
                         {item.name}
                       </span>
-                      <span className="text-[#f3eadb]/62">
+                      <span className="text-admin-muted">
                         x {item.quantity}
                       </span>
                     </div>
@@ -172,7 +172,7 @@ export default function AdminOrderCard({
                   type="button"
                   onClick={() => onResend(order)}
                   disabled={!canResend || isResending}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-[#f8f0e3] px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.16em] text-black transition hover:bg-white disabled:hover:bg-[#f8f0e3] disabled:cursor-not-allowed disabled:opacity-70"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-admin-primary px-4 py-2.5 text-sm font-medium text-admin-primary-text transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:bg-admin-primary"
                 >
                   <FiMail
                     aria-hidden="true"
@@ -187,10 +187,10 @@ export default function AdminOrderCard({
                   onClick={() => onRefund(order)}
                   disabled={!canRefund || isRefunding}
                   className={[
-                    "inline-flex w-full items-center justify-center gap-2 rounded-md border px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.16em] transition",
+                    "inline-flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition",
                     !canRefund
-                      ? "cursor-not-allowed border-[#f3eadb]/10 bg-[#f3eadb]/5 text-[#f3eadb]/34"
-                      : "border-red-300/22 bg-red-400/4.5 text-red-100 hover:border-red-200/38 hover:bg-red-400/8 disabled:cursor-wait disabled:opacity-70",
+                      ? "cursor-not-allowed border-admin-border bg-black/10 text-admin-subtle"
+                      : "border-red-300/25 bg-red-400/5 text-red-100 hover:border-red-200/40 hover:bg-red-400/10 disabled:cursor-wait disabled:opacity-70",
                   ].join(" ")}
                 >
                   <FiRotateCcw

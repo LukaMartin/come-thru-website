@@ -20,8 +20,8 @@ type AdminGalleryImageFormProps = {
 
 const initialState: AdminGalleryMutationState = {};
 const inputClass =
-  "border border-[#f3eadb]/14 bg-black/35 px-4 py-3 text-sm text-[#f8f0e3] outline-none transition focus:border-[#d7c7ad]/70";
-const labelClass = "grid gap-2 text-sm text-[#f3eadb]/72";
+  "rounded-xl border border-admin-border bg-black/20 px-4 py-3 text-sm text-admin-text outline-none transition placeholder:text-admin-subtle focus:border-admin-border-strong focus:bg-black/30 file:mr-4 file:rounded-lg file:border-0 file:bg-admin-primary file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-admin-primary-text";
+const labelClass = "grid gap-2 text-sm font-medium text-admin-muted";
 
 export function AdminGalleryImageForm({
   action,
@@ -34,10 +34,10 @@ export function AdminGalleryImageForm({
   useActionToast(state, isPending);
 
   return (
-    <form action={formAction} className="grid gap-5 md:grid-cols-[16rem_1fr]">
+    <form action={formAction} className="grid grid-cols-[18rem_minmax(0,1fr)] gap-5">
       <input type="hidden" name="slot" value={slot} />
 
-      <div className="overflow-hidden border border-[#f3eadb]/12 bg-[#11100d]">
+      <div className="overflow-hidden rounded-2xl border border-admin-border bg-black/20">
         {previewUrl ? (
           <Image
             src={previewUrl}
@@ -45,17 +45,17 @@ export function AdminGalleryImageForm({
             width={512}
             height={384}
             unoptimized
-            className="aspect-4/3 h-full min-h-48 w-full object-cover opacity-90"
+            className="aspect-4/3 h-full min-h-44 w-full object-cover"
           />
         ) : (
-          <div className="flex aspect-4/3 min-h-48 items-center justify-center p-5 text-center text-sm text-[#f3eadb]/50">
+          <div className="flex aspect-4/3 min-h-44 items-center justify-center p-5 text-center text-sm text-admin-muted">
             No image yet.
           </div>
         )}
       </div>
 
-      <div className="grid gap-4">
-        <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid content-start gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <label className={labelClass}>
             Upload new image
             <input
@@ -86,12 +86,12 @@ export function AdminGalleryImageForm({
           />
         </label>
 
-        <label className="flex items-center gap-3 text-sm text-[#f3eadb]/72">
+        <label className="flex items-center gap-3 text-sm font-medium text-admin-muted">
           <input
             name="is_active"
             type="checkbox"
             defaultChecked={image?.is_active ?? true}
-            className="size-4 accent-[#f8f0e3]"
+            className="size-4 accent-admin-primary"
           />
           Show this slot on the homepage
         </label>
@@ -99,7 +99,7 @@ export function AdminGalleryImageForm({
         <button
           type="submit"
           disabled={isPending}
-          className="w-fit rounded-md bg-[#f8f0e3] px-6 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-white disabled:opacity-60"
+          className="w-fit rounded-xl bg-admin-primary px-5 py-2.5 text-sm font-medium text-admin-primary-text transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isPending ? "Saving..." : "Save image"}
         </button>

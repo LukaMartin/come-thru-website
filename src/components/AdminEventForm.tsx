@@ -20,12 +20,12 @@ type AdminEventFormProps = {
 
 const initialState: AdminMutationState = {};
 const inputClass =
-  "border border-[#f3eadb]/14 bg-black/35 px-4 py-3 text-sm text-[#f8f0e3] outline-none transition focus:border-[#d7c7ad]/70";
+  "rounded-xl border border-admin-border bg-black/20 px-4 py-3 text-sm text-admin-text outline-none transition placeholder:text-admin-subtle focus:border-admin-border-strong focus:bg-black/30";
 const selectClass =
-  "w-full appearance-none border border-[#f3eadb]/14 bg-black/35 px-4 py-3 pr-12 text-sm font-medium text-[#f8f0e3] outline-none transition hover:border-[#f3eadb]/28 focus:border-[#d7c7ad]/70 focus:bg-black/70";
+  "w-full appearance-none rounded-xl border border-admin-border bg-black/20 px-4 py-3 pr-12 text-sm font-medium text-admin-text outline-none transition hover:border-admin-border-strong focus:border-admin-border-strong focus:bg-black/30";
 const fileInputClass =
-  "border border-[#f3eadb]/14 bg-black/35 px-3 py-2 text-sm text-[#f8f0e3] file:mr-4 file:border-0 file:bg-[#f8f0e3] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-black outline-none transition focus:border-[#d7c7ad]/70";
-const labelClass = "grid gap-2 text-sm text-[#f3eadb]/72";
+  "rounded-xl border border-admin-border bg-black/20 px-3 py-2 text-sm text-admin-text file:mr-4 file:rounded-lg file:border-0 file:bg-admin-primary file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-admin-primary-text outline-none transition focus:border-admin-border-strong";
+const labelClass = "grid gap-2 text-sm font-medium text-admin-muted";
 
 export function AdminEventForm({ action, event, mode }: AdminEventFormProps) {
   const [state, formAction, isPending] = useActionState(action, initialState);
@@ -118,7 +118,7 @@ export function AdminEventForm({ action, event, mode }: AdminEventFormProps) {
 
       {mode === "edit" ? (
         <div className="grid gap-4 md:grid-cols-[12rem_1fr] md:items-start">
-          <div className="overflow-hidden border border-[#f3eadb]/12 bg-[#11100d]">
+          <div className="overflow-hidden rounded-xl border border-admin-border bg-black/20">
             {previewUrl ? (
               <Image
                 src={previewUrl}
@@ -129,7 +129,7 @@ export function AdminEventForm({ action, event, mode }: AdminEventFormProps) {
                 className="aspect-45/64 w-full object-cover opacity-90"
               />
             ) : (
-              <div className="flex aspect-45/64 items-center justify-center p-5 text-center text-sm text-[#f3eadb]/50">
+              <div className="flex aspect-45/64 items-center justify-center p-5 text-center text-sm text-admin-muted">
                 No hero image yet.
               </div>
             )}
@@ -145,7 +145,7 @@ export function AdminEventForm({ action, event, mode }: AdminEventFormProps) {
                 className={fileInputClass}
                 autoComplete="off"
               />
-              <span className="text-xs leading-5 text-[#f3eadb]/45">
+              <span className="text-xs leading-5 text-admin-subtle">
                 JPG or PNG, converted to a 720x1024 WebP.
               </span>
             </label>
@@ -204,17 +204,20 @@ export function AdminEventForm({ action, event, mode }: AdminEventFormProps) {
                 defaultValue={event?.status ?? "draft"}
                 className={selectClass}
               >
-                <option className="bg-[#080705] text-[#f8f0e3]" value="draft">
+                <option
+                  className="bg-admin-surface text-admin-text"
+                  value="draft"
+                >
                   Draft
                 </option>
                 <option
-                  className="bg-[#080705] text-[#f8f0e3]"
+                  className="bg-admin-surface text-admin-text"
                   value="published"
                 >
                   Published
                 </option>
                 <option
-                  className="bg-[#080705] text-[#f8f0e3]"
+                  className="bg-admin-surface text-admin-text"
                   value="archived"
                 >
                   Archived
@@ -223,7 +226,7 @@ export function AdminEventForm({ action, event, mode }: AdminEventFormProps) {
               <svg
                 aria-hidden="true"
                 viewBox="0 0 20 20"
-                className="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-[#f3eadb]/70"
+                className="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-admin-subtle"
               >
                 <path
                   d="M5 7.5 10 12.5 15 7.5"
@@ -242,12 +245,12 @@ export function AdminEventForm({ action, event, mode }: AdminEventFormProps) {
       )}
 
       <div className="grid gap-4 md:grid-cols-2">
-        <label className="flex items-center gap-3 text-sm text-[#f3eadb]/72">
+        <label className="flex items-center gap-3 text-sm font-medium text-admin-muted">
           <input
             name="is_free"
             type="checkbox"
             defaultChecked={event?.is_free ?? false}
-            className="size-4 accent-[#f8f0e3]"
+            className="size-4 accent-admin-primary"
           />
           Free event
         </label>
@@ -256,7 +259,7 @@ export function AdminEventForm({ action, event, mode }: AdminEventFormProps) {
       <button
         type="submit"
         disabled={isPending}
-        className="w-fit rounded-md bg-[#f8f0e3] px-6 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-white disabled:opacity-60"
+        className="w-fit rounded-xl bg-admin-primary px-5 py-2.5 text-sm font-medium text-admin-primary-text transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isPending
           ? "Saving..."

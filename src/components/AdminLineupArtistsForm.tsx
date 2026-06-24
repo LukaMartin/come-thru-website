@@ -18,8 +18,8 @@ type AdminLineupArtistsFormProps = {
 const lineupSlots = [0, 1, 2, 3, 4, 5] as const;
 const initialState: AdminMutationState = {};
 const inputClass =
-  "border border-[#f3eadb]/14 bg-black/35 px-4 py-3 text-sm text-[#f8f0e3] outline-none transition focus:border-[#d7c7ad]/70";
-const labelClass = "grid gap-2 text-sm text-[#f3eadb]/72";
+  "rounded-xl border border-admin-border bg-black/20 px-4 py-3 text-sm text-admin-text outline-none transition placeholder:text-admin-subtle focus:border-admin-border-strong focus:bg-black/30";
+const labelClass = "grid gap-2 text-sm font-medium text-admin-muted";
 
 export function AdminLineupArtistsForm({
   action,
@@ -41,9 +41,9 @@ export function AdminLineupArtistsForm({
           return (
             <div
               key={slot}
-              className="grid gap-4 border border-[#f3eadb]/10 bg-black/20 p-4 md:grid-cols-[7rem_1fr_1.4fr]"
+              className="grid gap-4 rounded-2xl border border-admin-border bg-black/10 p-4 md:grid-cols-[7rem_1fr_1.4fr]"
             >
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#d7c7ad]">
+              <p className="text-xs font-medium text-admin-subtle">
                 Slot {slot}
               </p>
               <label className={labelClass}>
@@ -70,7 +70,7 @@ export function AdminLineupArtistsForm({
         })}
       </div>
 
-      <p className="text-sm leading-6 text-[#f3eadb]/58">
+      <p className="text-sm leading-6 text-admin-muted">
         Fill slots from 0 upward. A slot with a name is saved, and an empty name
         deletes that slot.
       </p>
@@ -78,7 +78,7 @@ export function AdminLineupArtistsForm({
       <button
         type="submit"
         disabled={isPending}
-        className="w-fit rounded-md bg-[#f8f0e3] px-6 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-white disabled:opacity-60"
+        className="w-fit rounded-xl bg-admin-primary px-5 py-2.5 text-sm font-medium text-admin-primary-text transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isPending ? "Saving..." : "Save lineup"}
       </button>

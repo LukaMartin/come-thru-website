@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { FiArrowUpRight, FiCalendar, FiPlus, FiTag } from "react-icons/fi";
 
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { AdminShell } from "@/components/admin/AdminShell";
 import { createSessionAuthClient, requireAdmin } from "@/lib/admin-auth";
-import { logoutAdminAction } from "@/lib/auth-actions";
 import type { Database } from "@/lib/database.types";
 import { formatEventDateRange } from "@/lib/tickets";
 
@@ -27,6 +29,18 @@ function statusLabel(event: EventRow) {
   return event.status;
 }
 
+function statusPillClass(event: EventRow) {
+  if (event.is_current) {
+    return "border-sky-400/25 bg-sky-400/10 text-sky-100";
+  }
+
+  if (event.status === "published") {
+    return "border-emerald-400/25 bg-emerald-400/10 text-emerald-100";
+  }
+
+  return "border-amber-400/30 bg-amber-400/10 text-amber-100";
+}
+
 export default async function AdminEventsPage() {
   await requireAdmin();
 
@@ -41,91 +55,137 @@ export default async function AdminEventsPage() {
   }
 
   const events = (data ?? []) as EventWithTicketTypes[];
+  const currentEventCount = events.filter((event) => event.is_current).length;
+  const publishedEventCount = events.filter(
+    (event) => event.status === "published",
+  ).length;
+  const ticketTypeCount = events.reduce(
+    (total, event) => total + (event.ticketing_ticket_types?.length ?? 0),
+    0,
+  );
 
   return (
-    <main className="relative min-h-dvh overflow-hidden bg-[#070605] px-5 py-8 text-[#f8f0e3] sm:px-6">
-      <div className="pointer-events-none fixed inset-0 z-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.045)_0_1px,transparent_1px_18px)]" />
-      <div className="relative z-10 mx-auto grid w-full max-w-6xl gap-8">
-        <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[#f3eadb]/12 pb-6">
-          <div>
-            <p className="text-[0.68rem] uppercase tracking-[0.45em] text-[#d7c7ad]">
-              Admin
-            </p>
-            <h1 className="mt-3 text-5xl font-black uppercase leading-none tracking-[-0.06em]">
-              Events
-            </h1>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <Link
-              href="/admin/support"
-              className="rounded-md bg-[#f8f0e3] px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-white"
-            >
-              Support
-            </Link>
-            <Link
-              href="/admin/gallery"
-              className="rounded-md bg-[#f8f0e3] px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-white"
-            >
-              Gallery
-            </Link>
-            <Link
-              href="/admin/events/new"
-              className="rounded-md bg-[#f8f0e3] px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-white"
-            >
-              New event
-            </Link>
-            <form action={logoutAdminAction}>
-              <button
-                type="submit"
-                className="rounded-md border border-[#f3eadb]/18 px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-[#f8f0e3] transition hover:bg-red-400/5 hover:border-red-400/30"
-              >
-                Log out
-              </button>
-            </form>
-          </div>
-        </header>
+    <AdminShell>
+      <AdminPageHeader
+        eyebrow="Ticketing"
+        title="Events"
+        description="Manage event setup, ticket inventory, lineup details, orders, and the current published event."
+        actions={
+          <Link
+            href="/admin/events/new"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-admin-primary px-4 py-2.5 text-sm font-medium text-admin-primary-text transition hover:bg-white"
+          >
+            <FiPlus aria-hidden className="size-4" />
+            New event
+          </Link>
+        }
+      />
 
-        <section className="grid gap-4">
-          {events.length === 0 ? (
-            <div className="border border-[#f3eadb]/14 bg-[#080706] p-6 text-sm text-[#f3eadb]/68">
-              No events yet.
+      <section className="grid gap-5">
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { label: "Total events", value: events.length, icon: FiCalendar },
+            { label: "Current events", value: currentEventCount, icon: FiTag },
+            { label: "Ticket types", value: ticketTypeCount, icon: FiTag },
+          ].map((stat) => (
+            <div
+              key={stat.label}
+              className="rounded-2xl border border-admin-border bg-admin-surface p-4 shadow-sm shadow-black/20"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-medium text-admin-muted">
+                    {stat.label}
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-admin-text">
+                    {stat.value}
+                  </p>
+                </div>
+                <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-admin-border bg-admin-surface-elevated text-admin-muted">
+                  <stat.icon aria-hidden className="size-4" />
+                </span>
+              </div>
             </div>
-          ) : null}
+          ))}
+        </div>
 
-          {events.map((event) => (
-            <Link
-              key={event.id}
-              href={`/admin/events/${event.id}`}
-              className="group grid gap-4 border border-[#f3eadb]/14 bg-[radial-gradient(circle_at_18%_18%,rgba(172,67,43,0.26),transparent_34%),#0d0908] p-5 transition hover:border-[#d7c7ad]/45 md:grid-cols-[1fr_auto]"
-            >
-              <div>
-                <div className="flex flex-wrap items-center gap-3">
-                  <span className="rounded-full border border-[#f3eadb]/14 px-3 py-1 text-[0.65rem] uppercase tracking-[0.24em] text-[#d7c7ad]">
-                    {statusLabel(event)}
-                  </span>
-                  <span className="text-xs text-[#f3eadb]/50">
-                    {event.slug}
+        <div className="rounded-2xl border border-admin-border bg-admin-surface shadow-sm shadow-black/20">
+          <div className="flex items-center justify-between border-b border-admin-border px-5 py-4">
+            <div>
+              <h2 className="text-sm font-semibold text-admin-text">
+                Event library
+              </h2>
+              <p className="mt-1 text-xs text-admin-subtle">
+                {publishedEventCount} published, {events.length} total
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-2 p-3">
+            {events.length === 0 ? (
+              <div className="grid min-h-56 place-items-center rounded-xl border border-admin-border bg-black/10 p-6 text-center">
+                <div>
+                  <FiCalendar
+                    aria-hidden
+                    className="mx-auto size-8 text-admin-subtle"
+                  />
+                  <p className="mt-4 text-sm font-semibold text-admin-text">
+                    No events yet
+                  </p>
+                  <p className="mt-2 text-xs leading-5 text-admin-muted">
+                    Create a draft event to start setting up tickets and lineup.
+                  </p>
+                </div>
+              </div>
+            ) : null}
+
+            {events.map((event) => (
+              <Link
+                key={event.id}
+                href={`/admin/events/${event.id}`}
+                className="group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-5 rounded-xl border border-admin-border bg-black/10 p-4 transition duration-500 hover:border-admin-border-strong hover:bg-admin-surface-elevated"
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={`rounded-full border px-2.5 py-1 text-xs font-medium ${statusPillClass(event)}`}
+                    >
+                      {statusLabel(event)}
+                    </span>
+                    <span className="truncate text-xs text-admin-subtle">
+                      /{event.slug}
+                    </span>
+                  </div>
+                  <h2 className="mt-3 truncate text-lg font-semibold tracking-[-0.03em] text-admin-text">
+                    {event.name}
+                  </h2>
+                  <p className="mt-2 truncate text-sm text-admin-muted">
+                    {formatEventDateRange(event.starts_at, event.ends_at)}
+                    {" / "}
+                    {event.venue}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 text-sm text-admin-muted">
+                  {event.ticketing_ticket_types?.length > 0 && (
+                    <div className="rounded-xl h-10 flex items-center justify-center border border-admin-border bg-admin-surface px-3 py-2">
+                      <p className="text-xs font-medium text-admin-muted ">
+                        {event.ticketing_ticket_types?.length ?? 0}{" "}
+                        {event.ticketing_ticket_types?.length === 1
+                          ? "ticket type"
+                          : "ticket types"}
+                      </p>
+                    </div>
+                  )}
+                  <span className="inline-flex h-10 items-center gap-2 rounded-xl border border-admin-border bg-admin-surface px-3 text-xs font-medium text-admin-muted transition duration-500 group-hover:border-admin-border-strong group-hover:bg-admin-primary group-hover:text-admin-primary-text">
+                    Open
+                    <FiArrowUpRight aria-hidden className="size-4" />
                   </span>
                 </div>
-                <h2 className="mt-4 text-3xl font-black uppercase leading-none tracking-[-0.04em]">
-                  {event.name}
-                </h2>
-                <p className="mt-3 text-sm text-[#f3eadb]/64">
-                  {formatEventDateRange(event.starts_at, event.ends_at)}
-                  {" / "}
-                  {event.venue}
-                </p>
-              </div>
-              <div className="text-sm text-[#f3eadb]/58 md:text-right">
-                <p>{event.ticketing_ticket_types?.length ?? 0} ticket types</p>
-                <p className="mt-2 transition group-hover:text-[#f8f0e3]">
-                  Edit -&gt;
-                </p>
-              </div>
-            </Link>
-          ))}
-        </section>
-      </div>
-    </main>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+    </AdminShell>
   );
 }
