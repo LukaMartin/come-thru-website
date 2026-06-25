@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { FiArrowLeft } from "react-icons/fi";
 
-import { AdminEventForm } from "@/components/AdminEventForm";
+import { AdminEventForm } from "@/components/admin/AdminEventForm";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { createEventDraftAction } from "@/lib/admin-events-actions";

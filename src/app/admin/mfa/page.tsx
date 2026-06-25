@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { AdminMfaForm } from "@/components/AdminMfaForm";
+import { AdminMfaForm } from "@/components/admin/AdminMfaForm";
 import { createSessionAuthClient, requireAdminForMfa } from "@/lib/admin-auth";
 
 export const metadata: Metadata = {

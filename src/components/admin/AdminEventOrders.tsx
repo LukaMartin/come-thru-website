@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import * as Sentry from "@sentry/nextjs";
-import AdminOrderCard from "@/components/AdminOrderCard";
+import AdminOrderCard from "@/components/admin/AdminOrderCard";
 import {
   FiCheckCircle,
   FiRotateCcw,

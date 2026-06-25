@@ -9,12 +9,12 @@ import {
   updateLineupArtistsAction,
   updateTicketTypeAction,
 } from "@/lib/admin-events-actions";
-import { AdminEventDashboard } from "@/components/AdminEventDashboard";
-import type { AdminEventOrder } from "@/components/AdminEventOrders";
-import { AdminEventForm } from "@/components/AdminEventForm";
-import { AdminLineupArtistsForm } from "@/components/AdminLineupArtistsForm";
-import { AdminTicketTypeCard } from "@/components/AdminTicketTypeCard";
-import { AdminTicketTypeForm } from "@/components/AdminTicketTypeForm";
+import { AdminEventDashboard } from "@/components/admin/AdminEventDashboard";
+import type { AdminEventOrder } from "@/components/admin/AdminEventOrders";
+import { AdminEventForm } from "@/components/admin/AdminEventForm";
+import { AdminLineupArtistsForm } from "@/components/admin/AdminLineupArtistsForm";
+import { AdminTicketTypeCard } from "@/components/admin/AdminTicketTypeCard";
+import { AdminTicketTypeForm } from "@/components/admin/AdminTicketTypeForm";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { createSessionAuthClient, requireAdmin } from "@/lib/admin-auth";

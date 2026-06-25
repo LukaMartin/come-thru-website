@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { AdminSupportInbox } from "@/components/AdminSupportInbox";
+import { AdminSupportInbox } from "@/components/admin/AdminSupportInbox";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { createSessionAuthClient, requireAdmin } from "@/lib/admin-auth";

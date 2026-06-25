@@ -7,7 +7,7 @@ import { FiCalendar, FiMusic, FiShoppingBag, FiTag } from "react-icons/fi";
 import {
   AdminEventOrders,
   type AdminEventOrder,
-} from "@/components/AdminEventOrders";
+} from "@/components/admin/AdminEventOrders";
 
 type DashboardTabId = "details" | "artists" | "tickets" | "orders";
 

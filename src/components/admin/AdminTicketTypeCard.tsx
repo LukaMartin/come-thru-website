@@ -4,7 +4,7 @@ import { useId, useState } from "react";
 import { FiChevronDown } from "react-icons/fi";
 import type { AdminMutationState } from "@/lib/admin-events-actions";
 import type { Database } from "@/lib/database.types";
-import { AdminTicketTypeForm } from "@/components/AdminTicketTypeForm";
+import { AdminTicketTypeForm } from "@/components/admin/AdminTicketTypeForm";
 
 type TicketTypeRow =
   Database["public"]["Tables"]["ticketing_ticket_types"]["Row"];

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { updateGalleryImageAction } from "@/lib/admin-gallery-actions";
-import { AdminGalleryImageForm } from "@/components/AdminGalleryImageForm";
+import { AdminGalleryImageForm } from "@/components/admin/AdminGalleryImageForm";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { createSessionAuthClient, requireAdmin } from "@/lib/admin-auth";
