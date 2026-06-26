@@ -1,80 +1,36 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { useActionState, useState } from "react";
+import {
+  handleContactFormSubmission,
+  type ContactFormState,
+} from "@/lib/contact";
 
-type FormState = {
-  name: string;
-  email: string;
-  subject: string;
-  message: string;
-};
-
-type ContactResponse = {
-  error?: string;
-  fieldErrors?: Partial<Record<keyof FormState, string[]>>;
-};
-
-const initialForm: FormState = {
-  name: "",
-  email: "",
-  subject: "",
-  message: "",
-};
+const initialState: ContactFormState = {};
 
 export function ContactForm() {
-  const [form, setForm] = useState<FormState>(initialForm);
-  const [status, setStatus] = useState<
-    "idle" | "loading" | "success" | "error"
-  >("idle");
-  const [error, setError] = useState<string | null>(null);
+  const [formKey, setFormKey] = useState(0);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setStatus("loading");
-    setError(null);
+  return (
+    <ContactFormBody
+      key={formKey}
+      onReset={() => setFormKey((currentKey) => currentKey + 1)}
+    />
+  );
+}
 
-    try {
-      const submission: FormState = {
-        name: form.name.trim(),
-        email: form.email.trim(),
-        subject: form.subject.trim(),
-        message: form.message.trim(),
-      };
+function ContactFormBody({ onReset }: { onReset: () => void }) {
+  const [state, formAction, isPending] = useActionState(
+    handleContactFormSubmission,
+    initialState,
+  );
 
-      const response = await fetch("/api/contact", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(submission),
-      });
-      const payload = (await response.json()) as ContactResponse;
-
-      if (!response.ok) {
-        const fieldError = Object.values(payload.fieldErrors ?? {}).flat()[0];
-
-        throw new Error(
-          fieldError ?? payload.error ?? "Unable to send your message.",
-        );
-      }
-
-      setForm(initialForm);
-      setStatus("success");
-    } catch (sendError) {
-      setStatus("error");
-      setError(
-        sendError instanceof Error
-          ? sendError.message
-          : "Unable to send your message.",
-      );
-    }
-  }
-
-  const isLoading = status === "loading";
   const labelClass =
     "text-[0.65rem] uppercase tracking-[0.32em] text-[#d7c7ad]/58";
   const fieldClass =
     "mt-2 w-full border border-[#f3eadb]/12 bg-black/30 px-4 py-3 text-sm text-[#f8f0e3] outline-none transition duration-300 placeholder:text-[#f3eadb]/30 focus:border-[#d7c7ad]/60";
 
-  if (status === "success") {
+  if (state.status === "success") {
     return (
       <div className="border border-[#f3eadb]/12 bg-black/30 p-8 text-[#f8f0e3]">
         <p className="text-[0.65rem] uppercase tracking-[0.32em] text-[#d7c7ad]/58">
@@ -89,10 +45,7 @@ export function ContactForm() {
         </p>
         <button
           type="button"
-          onClick={() => {
-            setStatus("idle");
-            setError(null);
-          }}
+          onClick={onReset}
           className="mt-7 rounded-md border border-[#f3eadb]/18 px-6 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-[#f8f0e3] transition duration-300 hover:border-[#d7c7ad]/55 hover:bg-[#f3eadb]/8"
         >
           Send another request
@@ -102,35 +55,33 @@ export function ContactForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
+    <form action={formAction} className="space-y-4" autoComplete="off">
       <div className="grid gap-4 md:grid-cols-2">
         <label className="block">
           <span className={labelClass}>Name</span>
           <input
+            name="name"
+            defaultValue={state.values?.name ?? ""}
             required
             type="text"
             maxLength={120}
-            value={form.name}
-            onChange={(event) => setForm({ ...form, name: event.target.value })}
             className={fieldClass}
             placeholder="Your name"
-            autoComplete="new-password"
+            autoComplete="off"
           />
         </label>
 
         <label className="block">
           <span className={labelClass}>Email</span>
           <input
+            name="email"
+            defaultValue={state.values?.email ?? ""}
             required
             type="email"
             maxLength={254}
-            value={form.email}
-            onChange={(event) =>
-              setForm({ ...form, email: event.target.value })
-            }
             className={fieldClass}
             placeholder="you@example.com"
-            autoComplete="new-password"
+            autoComplete="off"
           />
         </label>
       </div>
@@ -138,55 +89,62 @@ export function ContactForm() {
       <label className="block">
         <span className={labelClass}>Subject</span>
         <input
+          name="subject"
+          defaultValue={state.values?.subject ?? ""}
           required
           type="text"
           maxLength={160}
-          value={form.subject}
-          onChange={(event) =>
-            setForm({ ...form, subject: event.target.value })
-          }
           className={fieldClass}
           placeholder="Ticket question, booking enquiry, or general message"
-          autoComplete="new-password"
+          autoComplete="off"
         />
       </label>
 
       <label className="block">
         <span className={labelClass}>Message</span>
         <textarea
+          name="message"
+          defaultValue={state.values?.message ?? ""}
           required
           minLength={10}
           maxLength={4000}
           rows={6}
-          value={form.message}
-          onChange={(event) =>
-            setForm({ ...form, message: event.target.value })
-          }
           className={`${fieldClass} resize-none leading-6`}
           placeholder="Tell us what you need help with."
-          autoComplete="new-password"
+          autoComplete="off"
         />
       </label>
 
-      {error ? (
+      {!isPending && state.status === "error" && state.error ? (
         <div
           role="alert"
-          className="border border-red-300/18 bg-red-950/18 px-4 py-3 text-sm text-[#f8f0e3]"
+          className="w-full border border-red-400/18 bg-red-950/18 py-[11px] px-4 rounded-md text-center md:hidden"
         >
-          <p className="text-[0.65rem] uppercase tracking-[0.28em] text-red-200/60">
-            Message not sent
+          <p className="leading-6 text-red-400 text-sm">
+            {state.error} Please try again.
           </p>
-          <p className="mt-1 leading-6 text-[#f3eadb]/78">{error}</p>
         </div>
       ) : null}
 
-      <button
-        type="submit"
-        disabled={isLoading}
-        className="w-full rounded-md bg-[#f8f0e3] px-6 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-black transition duration-300 hover:bg-white disabled:cursor-not-allowed disabled:opacity-40 md:w-auto"
-      >
-        {isLoading ? "Sending..." : "Send message"}
-      </button>
+      <div className="flex items-center justify-between h-11 md:h-12">
+        <button
+          type="submit"
+          disabled={isPending}
+          className="w-full rounded-md bg-[#f8f0e3] px-6 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-black transition duration-300 hover:bg-white disabled:cursor-not-allowed disabled:opacity-40 md:w-auto"
+        >
+          {isPending ? "Sending..." : "Send message"}
+        </button>
+        {!isPending && state.status === "error" && state.error ? (
+          <div
+            role="alert"
+            className="max-w-[60%] border border-red-400/18 bg-red-950/18 py-[11px] px-4 rounded-md text-center hidden md:block"
+          >
+            <p className="leading-6 text-red-400 text-sm">
+              {state.error} Please try again.
+            </p>
+          </div>
+        ) : null}
+      </div>
     </form>
   );
 }
