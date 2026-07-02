@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import * as Sentry from "@sentry/nextjs";
 import AdminOrderCard from "@/components/admin/AdminOrderCard";
 import {
   FiCheckCircle,
@@ -10,7 +9,7 @@ import {
   FiShoppingBag,
 } from "react-icons/fi";
 import { twMerge } from "tailwind-merge";
-import toast from "react-hot-toast";
+import useAdmin from "@/hooks/useAdminOrders";
 
 export type OrderStatus = "paid" | "refunded";
 
@@ -28,6 +27,7 @@ export type AdminEventOrder = {
   totalCents: number;
   currency: string;
   placedAt: string;
+  ticketEmailSentAt: string | null;
   stripePaymentIntentId: string | null;
   items: AdminEventOrderItem[];
 };
@@ -42,10 +42,14 @@ export function AdminEventOrders({
   orders: initialOrders,
 }: AdminEventOrdersProps) {
   const [orderPage, setOrderPage] = useState(1);
-  const [orders, setOrders] = useState(initialOrders);
-  const [refundingOrderId, setRefundingOrderId] = useState<string | null>(null);
-  const [resendingOrderId, setResendingOrderId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const {
+    orders,
+    refundingOrderId,
+    resendingOrderId,
+    refundOrder,
+    resendTickets,
+  } = useAdmin({ initialOrders });
   const normalizedSearchQuery = searchQuery.trim().toLowerCase();
   const orderStats = [
     { label: "Total orders", value: orders.length, icon: FiShoppingBag },
@@ -76,77 +80,6 @@ export function AdminEventOrders({
     (orderPage - 1) * ordersPerPage,
     orderPage * ordersPerPage,
   );
-
-  async function refundOrder(order: AdminEventOrder) {
-    setRefundingOrderId(order.id);
-
-    try {
-      if (!order.stripePaymentIntentId) {
-        throw new Error("Order has no Stripe payment intent.");
-      }
-
-      const response = await fetch("/api/refund", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          stripePaymentIntentId: order.stripePaymentIntentId,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Refund failed.");
-      }
-
-      setOrders((currentOrders) =>
-        currentOrders.map((currentOrder) =>
-          currentOrder.id === order.id
-            ? { ...currentOrder, status: "refunded" }
-            : currentOrder,
-        ),
-      );
-
-      toast.success(`${order.reference} has been refunded.`);
-    } catch (error) {
-      Sentry.captureException(error);
-      toast.error(
-        error instanceof Error ? error.message : "Could not refund order.",
-      );
-    } finally {
-      setRefundingOrderId(null);
-    }
-  }
-
-  async function resendTickets(order: AdminEventOrder) {
-    setResendingOrderId(order.id);
-
-    try {
-      const response = await fetch("/api/resend-tickets", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          orderId: order.id,
-        }),
-      });
-
-      if (!response.ok) {
-        toast.error("Failed to resend tickets.");
-        throw new Error("Failed to resend tickets.");
-      }
-
-      toast.success(`${order.reference} tickets have been resent`);
-    } catch (error) {
-      Sentry.captureException(error);
-      toast.error(
-        error instanceof Error ? error.message : "Could not resend tickets.",
-      );
-    } finally {
-      setResendingOrderId(null);
-    }
-  }
 
   return (
     <div className="grid gap-4">

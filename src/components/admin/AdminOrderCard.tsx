@@ -6,7 +6,12 @@ import type {
 import { useState } from "react";
 import { useId } from "react";
 import { FiChevronDown, FiMail, FiRotateCcw } from "react-icons/fi";
-import { formatEventDate, formatMoney } from "@/lib/tickets";
+import {
+  formatEventDate,
+  formatMoney,
+  formatTicketResendWait,
+} from "@/lib/tickets";
+import useTicketResendAvailability from "@/hooks/useTicketResendAvailability";
 
 type AdminOrderCardProps = {
   order: AdminEventOrder;
@@ -45,9 +50,19 @@ export default function AdminOrderCard({
   const panelId = useId();
   const isRefunded = order.status === "refunded";
   const canRefund = !isRefunded && Boolean(order.stripePaymentIntentId);
-  const canResend = order.status === "paid";
+  const resendAvailability = useTicketResendAvailability(
+    order.ticketEmailSentAt,
+  );
+  const canResend =
+    order.status === "paid" && Boolean(resendAvailability?.canResend);
   const orderName = order.name?.trim() || "No name";
   const orderEmail = order.email?.trim() || "No email";
+  const resendLabel =
+    resendAvailability && !resendAvailability.canResend
+      ? `Available in ${formatTicketResendWait(resendAvailability.remainingMs)}`
+      : isResending
+        ? "Resending"
+        : "Resend";
 
   return (
     <article
@@ -178,7 +193,7 @@ export default function AdminOrderCard({
                     aria-hidden="true"
                     className={isResending ? "size-4 animate-pulse" : "size-4"}
                   />
-                  {isResending ? "Resending" : "Resend"}
+                  {resendLabel}
                 </button>
               </div>
               <div>

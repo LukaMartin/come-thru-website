@@ -1,8 +1,13 @@
 "use server";
 
 import * as Sentry from "@sentry/nextjs";
+import { after } from "next/server";
 import { z } from "zod";
 import { createSupportThreadWithMessage } from "@/lib/support-server";
+import {
+  createPendingSupportAiSuggestion,
+  generateSupportAiSuggestion,
+} from "@/lib/support-ai";
 
 const contactSchema = z.object({
   name: z.string().trim().min(1, "Name is required.").max(120),
@@ -54,13 +59,34 @@ export async function handleContactFormSubmission(
   }
 
   try {
-    await createSupportThreadWithMessage({
+    const { thread, message } = await createSupportThreadWithMessage({
       customerEmail: parsed.data.email,
       customerName: parsed.data.name,
       subject: parsed.data.subject,
       bodyText: parsed.data.message,
       source: "contact_form",
       provider: "contact_form",
+    });
+
+    const suggestion = await createPendingSupportAiSuggestion({
+      threadId: thread.id,
+      triggerMessageId: message.id,
+    });
+
+    after(async () => {
+      try {
+        await generateSupportAiSuggestion({
+          suggestionId: suggestion.id,
+          threadId: thread.id,
+        });
+      } catch (error) {
+        Sentry.captureException(error, {
+          tags: {
+            "app.area": "support_ai_triage",
+            "support.thread_id": thread.id,
+          },
+        });
+      }
     });
 
     return { status: "success" };

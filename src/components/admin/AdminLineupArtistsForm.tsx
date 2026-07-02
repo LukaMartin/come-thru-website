@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 import type { AdminMutationState } from "@/lib/admin-events-actions";
 import type { Database } from "@/lib/database.types";
-import { useActionToast } from "@/hooks/use-action-toast";
+import { useActionToast } from "@/hooks/useActionToast";
 
 type LineupArtistRow = Database["public"]["Tables"]["lineup_artists"]["Row"];
 

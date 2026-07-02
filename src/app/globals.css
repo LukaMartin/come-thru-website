@@ -50,26 +50,39 @@
 
 html {
   overflow-y: scroll;
-  scrollbar-color: rgba(215, 199, 173, 0.38) #050505;
   scrollbar-gutter: stable;
 }
 
-::-webkit-scrollbar {
-  width: 12px;
+* {
+  scrollbar-color: rgba(215, 199, 173, 0.38) transparent;
+  scrollbar-width: thin;
 }
 
-::-webkit-scrollbar-track {
-  background: #050505;
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
 
-::-webkit-scrollbar-thumb {
-  border: 3px solid #050505;
-  border-radius: 999px;
-  background: rgba(215, 199, 173, 0.34);
+*::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(215, 199, 173, 0.52);
+*::-webkit-scrollbar-thumb {
+  border: 0;
+  border-radius: 0 !important;
+  background: rgba(215, 199, 173, 0.38) !important;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(215, 199, 173, 0.56) !important;
+}
+
+*::-webkit-scrollbar-button,
+*::-webkit-scrollbar-corner {
+  display: none;
+  width: 0;
+  height: 0;
+  background: transparent;
 }
 
 body {

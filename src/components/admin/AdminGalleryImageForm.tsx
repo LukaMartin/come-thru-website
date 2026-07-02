@@ -7,7 +7,7 @@ import type {
   updateGalleryImageAction,
 } from "@/lib/admin-gallery-actions";
 import type { Database } from "@/lib/database.types";
-import { useActionToast } from "@/hooks/use-action-toast";
+import { useActionToast } from "@/hooks/useActionToast";
 
 type GalleryImageRow =
   Database["public"]["Tables"]["site_gallery_images"]["Row"];

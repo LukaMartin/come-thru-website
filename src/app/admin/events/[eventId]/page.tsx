@@ -139,6 +139,7 @@ export default async function AdminEventPage({ params }: AdminEventPageProps) {
     totalCents: order.amount_total_cents,
     currency: order.currency,
     placedAt: order.created_at,
+    ticketEmailSentAt: order.ticket_email_sent_at,
     stripePaymentIntentId: order.stripe_payment_intent_id,
     items: (orderItemsByOrderId.get(order.id) ?? []).map((item) => ({
       name: ticketTypeById.get(item.ticket_type_id)?.name ?? "Unknown ticket",

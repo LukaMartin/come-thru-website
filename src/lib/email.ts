@@ -183,7 +183,6 @@ export async function markTicketEmailDelivery(
   }
 }
 
-
 export function renderTicketEmail(input: TicketEmailInput) {
   const eventDate = escapeHtml(
     formatEventDateRange(input.startsAt, input.endsAt),
@@ -267,15 +266,65 @@ function renderContactEmailText(input: SendContactEmailInput) {
 }
 
 function renderSupportReplyEmail(bodyText: string) {
-  const messageHtml = escapeHtml(bodyText).replaceAll("\n", "<br />");
+  const messageHtml = renderEmailParagraphs(bodyText);
 
   return `
-    <div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;padding:24px;color:#111;">
-      <div style="font-size:16px;line-height:1.6;">
-        ${messageHtml}
-      </div>
-    </div>
+    <!doctype html>
+    <html>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+      </head>
+      <body style="margin:0;padding:0;background:#f4f2ee;color:#111111;">
+        <span style="display:none!important;visibility:hidden;opacity:0;color:transparent;height:0;width:0;overflow:hidden;mso-hide:all;">
+          Come Thru Support has replied to your enquiry.
+        </span>
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="width:100%;background:#f4f2ee;border-collapse:collapse;">
+          <tr>
+            <td align="center" style="padding:32px 16px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="width:100%;max-width:640px;border-collapse:collapse;">
+                <tr>
+                  <td align="center" style="padding:0 0 24px;">
+                    <img src="${escapeHtml(emailLogoUrl)}" alt="Come Thru" width="450" style="display:block;width:450px;width:80%;height:auto;border:0;outline:none;text-decoration:none;" />
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0;">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="width:100%;background:#ffffff;border:1px solid #dedbd2;border-radius:18px;border-collapse:separate;border-spacing:0;overflow:hidden;box-shadow:0 16px 40px rgba(17,17,17,0.08);">
+                      <tr>
+                        <td style="padding:24px 32px;font-family:Inter,Arial,sans-serif;">
+                          <div style="font-size:16px;line-height:1.7;color:#171717;">
+                            ${messageHtml}
+                          </div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="padding:18px 24px 0;font-family:Inter,Arial,sans-serif;color:#77736a;font-size:13px;line-height:1.6;">
+                    Reply to this email if you need anything else.
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+    </html>
   `;
+}
+
+function renderEmailParagraphs(value: string) {
+  return value
+    .trim()
+    .split(/\n{2,}/)
+    .map((paragraph) => {
+      const html = escapeHtml(paragraph).replaceAll("\n", "<br />");
+
+      return `<p style="margin:0 0 16px;">${html}</p>`;
+    })
+    .join("");
 }
 
 function withDisplayName(from: string, displayName: string) {

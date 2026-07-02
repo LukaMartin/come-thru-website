@@ -4,7 +4,7 @@ import { useActionState } from "react";
 import type { AdminMutationState } from "@/lib/admin-events-actions";
 import type { Database } from "@/lib/database.types";
 import { formatSydneyDateTimeLocal } from "@/lib/event-time";
-import { useActionToast } from "@/hooks/use-action-toast";
+import { useActionToast } from "@/hooks/useActionToast";
 
 type TicketTypeRow =
   Database["public"]["Tables"]["ticketing_ticket_types"]["Row"];

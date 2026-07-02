@@ -6,14 +6,17 @@ import { createServiceClient } from "@/lib/supabase/server";
 import {
   appendSupportFooter,
   formatSupportSubject,
+  normalizeSupportAiSuggestion,
+  type SupportAiSuggestion,
   supportStatuses,
   type SupportThread,
 } from "@/lib/support";
 
 const replySchema = z.object({
   threadId: z.uuid(),
-  bodyText: z.string().trim().min(1).max(5000),
+  bodyText: z.string().trim().min(1).max(2000),
   nextStatus: z.enum(supportStatuses).optional(),
+  aiSuggestionId: z.uuid().optional(),
 });
 
 export async function POST(request: Request) {
@@ -45,10 +48,31 @@ export async function POST(request: Request) {
 
   const thread = threadData as SupportThread;
   const nextStatus = parsed.data.nextStatus ?? "resolved";
-  const bodyWithFooter = appendSupportFooter(
-    parsed.data.bodyText,
-    thread.reference_number,
-  );
+  const bodyWithFooter = appendSupportFooter(parsed.data.bodyText);
+  let aiSuggestion: SupportAiSuggestion | null = null;
+
+  if (parsed.data.aiSuggestionId) {
+    const { data: suggestionData, error: suggestionError } = await supabase
+      .from("support_ai_suggestions")
+      .select("*")
+      .eq("id", parsed.data.aiSuggestionId)
+      .eq("thread_id", thread.id)
+      .eq("draft_reply_outcome", "unused")
+      .maybeSingle();
+
+    if (suggestionError) {
+      throw suggestionError;
+    }
+
+    if (!suggestionData) {
+      return Response.json(
+        { error: "This AI draft has already been used or rejected." },
+        { status: 409 },
+      );
+    }
+
+    aiSuggestion = suggestionData as SupportAiSuggestion;
+  }
 
   try {
     const providerMessageId = await sendSupportReplyEmail({
@@ -56,7 +80,9 @@ export async function POST(request: Request) {
       subject: formatSupportSubject(thread),
       bodyText: bodyWithFooter,
     });
+
     const now = new Date().toISOString();
+
     const { data: message, error: messageError } = await supabase
       .from("support_messages")
       .insert({
@@ -68,9 +94,6 @@ export async function POST(request: Request) {
         body_text: parsed.data.bodyText,
         provider: "resend",
         provider_message_id: providerMessageId,
-        metadata: {
-          sent_body_includes_reference_footer: true,
-        },
         created_at: now,
       })
       .select("*")
@@ -95,10 +118,35 @@ export async function POST(request: Request) {
       throw updateError;
     }
 
+    let updatedAiSuggestion: SupportAiSuggestion | null = null;
+
+    if (aiSuggestion) {
+      const { data: suggestionData, error: suggestionError } = await supabase
+        .from("support_ai_suggestions")
+        .update({
+          draft_reply_outcome: "used",
+          draft_reply_outcome_at: now,
+          draft_reply_used_message_id: message.id,
+        })
+        .eq("id", aiSuggestion.id)
+        .eq("draft_reply_outcome", "unused")
+        .select("*")
+        .single();
+
+      if (suggestionError) {
+        throw suggestionError;
+      }
+
+      updatedAiSuggestion = suggestionData as SupportAiSuggestion;
+    }
+
     return Response.json({
       ok: true,
       thread: updatedThread,
       message,
+      aiSuggestion: updatedAiSuggestion
+        ? normalizeSupportAiSuggestion(updatedAiSuggestion)
+        : null,
     });
   } catch (error) {
     Sentry.captureException(error, {

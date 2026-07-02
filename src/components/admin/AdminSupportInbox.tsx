@@ -1,8 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import * as Sentry from "@sentry/nextjs";
-import toast from "react-hot-toast";
+import { useMemo } from "react";
 import {
   FiAlertCircle,
   FiCheck,
@@ -11,29 +9,28 @@ import {
   FiInbox,
   FiMail,
   FiMessageSquare,
+  FiRefreshCw,
   FiSearch,
   FiSend,
   FiUser,
+  FiZap,
 } from "react-icons/fi";
 import {
+  type AdminSupportAiSuggestion,
+  type SupportAiCategory,
+  type SupportAiPriority,
+  type SupportAiRecommendedAction,
   type SupportStatus,
   supportStatuses,
   type AdminSupportThread,
-  type SupportThread,
-  type SupportMessage,
-  normalizeSupportMessage,
-  normalizeSupportThread,
+  statusLabels,
 } from "@/lib/support";
-import { formatEventDate } from "@/lib/tickets";
+import { formatEventDate, formatTicketResendWait } from "@/lib/tickets";
+import useAdminSupport from "@/hooks/useAdminSupport";
+import useTicketResendAvailability from "@/hooks/useTicketResendAvailability";
 
 type AdminSupportInboxProps = {
   initialThreads: AdminSupportThread[];
-};
-
-const statusLabels: Record<SupportStatus, string> = {
-  new: "New",
-  needs_reply: "Needs reply",
-  resolved: "Resolved",
 };
 
 const statusPillClasses: Record<SupportStatus, string> = {
@@ -48,42 +45,67 @@ const statusDotClasses: Record<SupportStatus, string> = {
   resolved: "bg-emerald-300 shadow-emerald-300/40",
 };
 
+const aiCategoryLabels: Record<SupportAiCategory, string> = {
+  missing_tickets: "Missing tickets",
+  refund_request: "Refund request",
+  event_question: "Event question",
+  complaint: "Complaint",
+  spam: "Spam",
+  other: "Other",
+};
+
+const aiPriorityLabels: Record<SupportAiPriority, string> = {
+  low: "Low",
+  normal: "Normal",
+  high: "High",
+};
+
+const aiPriorityClasses: Record<SupportAiPriority, string> = {
+  low: "border-sky-400/25 bg-sky-400/10 text-sky-100",
+  normal: "border-amber-400/25 bg-amber-400/10 text-amber-100",
+  high: "border-red-400/25 bg-red-400/10 text-red-100",
+};
+
+const aiActionLabels: Record<SupportAiRecommendedAction, string> = {
+  resend_tickets: "Resend tickets",
+  refund_order: "Refund order",
+  ask_for_more_info: "Ask for more info",
+  manual_review: "Manual review",
+  no_action: "No action",
+};
+
+const draftOutcomeLabels: Record<
+  AdminSupportAiSuggestion["draftReplyOutcome"],
+  string
+> = {
+  unused: "Draft unused",
+  used: "Draft used",
+  rejected: "Draft rejected",
+};
+
 export function AdminSupportInbox({ initialThreads }: AdminSupportInboxProps) {
-  const [threads, setThreads] = useState(initialThreads);
-  const [selectedThreadId, setSelectedThreadId] = useState(
-    initialThreads[0]?.id ?? null,
-  );
-  const [statusFilter, setStatusFilter] = useState<SupportStatus | "all">(
-    "all",
-  );
-  const [searchQuery, setSearchQuery] = useState("");
-  const [replyBody, setReplyBody] = useState("");
-  const [isSending, setIsSending] = useState(false);
-  const [updatingStatus, setUpdatingStatus] = useState<SupportStatus | null>(
-    null,
-  );
+  const {
+    threads,
+    filteredThreads,
+    replyBody,
+    setReplyBody,
+    isSending,
+    statusFilter,
+    setStatusFilter,
+    searchQuery,
+    setSearchQuery,
+    setSelectedThreadId,
+    selectedThread,
+    rejectingSuggestionId,
+    suggestedAction,
+    updatingStatus,
+    rejectAiDraft,
+    sendReply,
+    updateThreadStatus,
+    resendSuggestedTickets,
+    refundSuggestedOrder,
+  } = useAdminSupport({ initialThreads });
 
-  const normalizedSearchQuery = searchQuery.trim().toLowerCase();
-  const filteredThreads = useMemo(() => {
-    return threads.filter((thread) => {
-      const matchesStatus =
-        statusFilter === "all" || thread.status === statusFilter;
-      const matchesSearch =
-        !normalizedSearchQuery ||
-        [
-          `#${thread.referenceNumber}`,
-          thread.subject,
-          thread.customerEmail,
-          thread.customerName,
-        ].some((value) => value?.toLowerCase().includes(normalizedSearchQuery));
-
-      return matchesStatus && matchesSearch;
-    });
-  }, [normalizedSearchQuery, statusFilter, threads]);
-  const selectedThread =
-    filteredThreads.find((thread) => thread.id === selectedThreadId) ??
-    filteredThreads[0] ??
-    null;
   const threadStats = useMemo(
     () => [
       {
@@ -107,6 +129,7 @@ export function AdminSupportInbox({ initialThreads }: AdminSupportInboxProps) {
     ],
     [threads],
   );
+
   const statusCounts = useMemo(
     () =>
       supportStatuses.reduce(
@@ -118,106 +141,18 @@ export function AdminSupportInbox({ initialThreads }: AdminSupportInboxProps) {
       ),
     [threads],
   );
+
   const selectedCustomerLabel = selectedThread
     ? selectedThread.customerName || selectedThread.customerEmail
     : "";
   const replyCharacterCount = replyBody.trim().length;
-
-  async function sendReply(nextStatus?: SupportStatus) {
-    if (!selectedThread || !replyBody.trim()) {
-      return;
-    }
-
-    setIsSending(true);
-
-    try {
-      const response = await fetch("/api/support/reply", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          threadId: selectedThread.id,
-          bodyText: replyBody,
-          nextStatus,
-        }),
-      });
-      const payload = (await response.json()) as {
-        error?: string;
-        thread?: SupportThread;
-        message?: SupportMessage;
-      };
-
-      if (!response.ok || !payload.thread || !payload.message) {
-        throw new Error(payload.error ?? "Could not send reply.");
-      }
-
-      const updatedThread = normalizeSupportThread(payload.thread);
-      const savedMessage = normalizeSupportMessage(payload.message);
-
-      setThreads((currentThreads) =>
-        currentThreads.map((thread) =>
-          thread.id === updatedThread.id
-            ? {
-                ...thread,
-                ...updatedThread,
-                messages: [...thread.messages, savedMessage],
-              }
-            : thread,
-        ),
-      );
-      setReplyBody("");
-      toast.success("Reply sent.");
-    } catch (error) {
-      Sentry.captureException(error);
-      toast.error(error instanceof Error ? error.message : "Could not reply.");
-    } finally {
-      setIsSending(false);
-    }
-  }
-
-  async function updateThreadStatus(status: SupportStatus) {
-    if (!selectedThread) {
-      return;
-    }
-
-    setUpdatingStatus(status);
-
-    try {
-      const response = await fetch("/api/support/status", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          threadId: selectedThread.id,
-          status,
-        }),
-      });
-      const payload = (await response.json()) as {
-        error?: string;
-        thread?: SupportThread;
-      };
-
-      if (!response.ok || !payload.thread) {
-        throw new Error(payload.error ?? "Could not update status.");
-      }
-
-      const updatedThread = normalizeSupportThread(payload.thread);
-
-      setThreads((currentThreads) =>
-        currentThreads.map((thread) =>
-          thread.id === updatedThread.id
-            ? { ...thread, ...updatedThread, messages: thread.messages }
-            : thread,
-        ),
-      );
-      toast.success(`Marked ${statusLabels[status].toLowerCase()}.`);
-    } catch (error) {
-      Sentry.captureException(error);
-      toast.error(
-        error instanceof Error ? error.message : "Could not update status.",
-      );
-    } finally {
-      setUpdatingStatus(null);
-    }
-  }
+  const selectedAiSuggestion = selectedThread?.aiSuggestion ?? null;
+  const selectedDraftOutcome = selectedAiSuggestion?.draftReplyOutcome;
+  const isSelectedDraftClosed =
+    Boolean(selectedDraftOutcome) && selectedDraftOutcome !== "unused";
+  const selectedResendAvailability = useTicketResendAvailability(
+    selectedAiSuggestion?.matchedOrderTicketEmailSentAt ?? null,
+  );
 
   return (
     <section className="grid h-[calc(100dvh-13rem)] grid-rows-[auto_minmax(0,1fr)] gap-4">
@@ -324,14 +259,14 @@ export function AdminSupportInbox({ initialThreads }: AdminSupportInboxProps) {
             </div>
           </div>
 
-          <div className="grid min-h-0 content-start gap-2 overflow-y-auto p-3 [scrollbar-color:rgb(63_63_70)_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-zinc-700/70 [&::-webkit-scrollbar-track]:bg-transparent">
+          <div className="flex min-h-0 flex-col gap-2 overflow-y-auto p-3">
             {filteredThreads.map((thread) => (
               <button
                 key={thread.id}
                 type="button"
                 onClick={() => setSelectedThreadId(thread.id)}
                 className={[
-                  "group relative overflow-hidden rounded-xl border p-4 text-left transition",
+                  "group relative min-h-28 shrink-0 overflow-hidden rounded-xl border p-4 text-left transition",
                   selectedThread?.id === thread.id
                     ? "border-admin-border-strong bg-admin-surface-elevated"
                     : "border-admin-border bg-black/10 hover:bg-admin-surface-elevated",
@@ -431,6 +366,209 @@ export function AdminSupportInbox({ initialThreads }: AdminSupportInboxProps) {
               </header>
 
               <div className="grid content-start gap-4 overflow-y-auto p-6">
+                {selectedAiSuggestion ? (
+                  <section className="rounded-2xl border border-violet-300/20 bg-violet-400/10 p-4 shadow-sm shadow-violet-950/20">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-violet-100/80">
+                          <FiZap aria-hidden className="size-3.5" />
+                          AI assist
+                        </p>
+                        <h2 className="mt-2 text-sm font-semibold text-admin-text">
+                          Support triage suggestion
+                        </h2>
+                      </div>
+                      <span className="rounded-full border border-violet-300/20 bg-black/15 px-2.5 py-1 text-xs font-medium capitalize text-violet-100">
+                        {selectedAiSuggestion.status}
+                      </span>
+                    </div>
+
+                    {selectedAiSuggestion.status === "pending" ? (
+                      <p className="mt-3 text-sm leading-6 text-admin-muted">
+                        AI triage is running in the background. Refresh the
+                        inbox shortly to review the draft and recommendation.
+                      </p>
+                    ) : null}
+
+                    {selectedAiSuggestion.status === "failed" ? (
+                      <p className="mt-3 text-sm leading-6 text-red-200/80">
+                        AI triage failed
+                        {selectedAiSuggestion.errorMessage
+                          ? `: ${selectedAiSuggestion.errorMessage}`
+                          : "."}
+                      </p>
+                    ) : null}
+
+                    {selectedAiSuggestion.status === "completed" ? (
+                      <div className="mt-4 grid gap-4">
+                        <div className="flex flex-wrap gap-2">
+                          {selectedAiSuggestion.category ? (
+                            <span className="rounded-full border border-violet-300/20 bg-black/15 px-2.5 py-1 text-xs font-medium text-violet-100">
+                              {aiCategoryLabels[selectedAiSuggestion.category]}
+                            </span>
+                          ) : null}
+                          {selectedAiSuggestion.priority ? (
+                            <span
+                              className={`rounded-full border px-2.5 py-1 text-xs font-medium ${aiPriorityClasses[selectedAiSuggestion.priority]}`}
+                            >
+                              {aiPriorityLabels[selectedAiSuggestion.priority]}{" "}
+                              priority
+                            </span>
+                          ) : null}
+                        </div>
+
+                        {selectedAiSuggestion.summary ? (
+                          <div>
+                            <p className="text-xs font-medium text-admin-subtle">
+                              Summary
+                            </p>
+                            <p className="mt-1 text-sm leading-6 text-admin-text">
+                              {selectedAiSuggestion.summary}
+                            </p>
+                          </div>
+                        ) : null}
+
+                        {selectedAiSuggestion.recommendedAction ? (
+                          <div>
+                            <p className="text-xs font-medium text-admin-subtle">
+                              Recommended action
+                            </p>
+                            <p className="mt-1 text-sm leading-6 text-admin-text">
+                              {
+                                aiActionLabels[
+                                  selectedAiSuggestion.recommendedAction
+                                ]
+                              }
+                            </p>
+                          </div>
+                        ) : null}
+
+                        {selectedAiSuggestion.draftReply ? (
+                          <div>
+                            <p className="text-xs font-medium text-admin-subtle">
+                              Draft reply
+                            </p>
+                            <p className="mt-1 text-sm leading-6 text-admin-text">
+                              {selectedAiSuggestion.draftReply}
+                            </p>
+                            <p className="mt-2 text-xs text-admin-subtle">
+                              {
+                                draftOutcomeLabels[
+                                  selectedAiSuggestion.draftReplyOutcome
+                                ]
+                              }
+                            </p>
+                          </div>
+                        ) : null}
+
+                        <div className="flex flex-wrap items-center gap-2">
+                          {selectedAiSuggestion.draftReply ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                void sendReply(
+                                  undefined,
+                                  selectedAiSuggestion.draftReply ?? "",
+                                  selectedAiSuggestion.id,
+                                )
+                              }
+                              disabled={isSending || isSelectedDraftClosed}
+                              className="inline-flex items-center justify-center gap-2 rounded-xl border border-violet-300/25 bg-violet-300/10 px-3 py-2 text-xs font-medium text-violet-100 transition hover:border-violet-200/40 hover:bg-violet-300/15 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {selectedAiSuggestion.draftReplyOutcome === "used"
+                                ? "Draft used"
+                                : "Use draft"}
+                            </button>
+                          ) : null}
+                          {selectedAiSuggestion.draftReply ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                void rejectAiDraft(selectedAiSuggestion)
+                              }
+                              disabled={
+                                isSending ||
+                                Boolean(rejectingSuggestionId) ||
+                                isSelectedDraftClosed
+                              }
+                              className="inline-flex items-center justify-center gap-2 rounded-xl border border-admin-border bg-black/15 px-3 py-2 text-xs font-medium text-admin-muted transition hover:border-admin-danger/50 hover:bg-black/25 hover:text-admin-danger/70 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {selectedAiSuggestion.draftReplyOutcome ===
+                              "rejected"
+                                ? "Draft rejected"
+                                : rejectingSuggestionId ===
+                                    selectedAiSuggestion.id
+                                  ? "Rejecting"
+                                  : "Reject draft"}
+                            </button>
+                          ) : null}
+                          {selectedAiSuggestion.recommendedAction ===
+                            "resend_tickets" &&
+                          selectedAiSuggestion.matchedOrderId ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                void resendSuggestedTickets(
+                                  selectedAiSuggestion,
+                                )
+                              }
+                              disabled={
+                                Boolean(suggestedAction) ||
+                                !selectedResendAvailability?.canResend
+                              }
+                              className="inline-flex items-center justify-center gap-2 rounded-xl border border-amber-300/25 bg-amber-300/10 px-3 py-2 text-xs font-medium text-amber-100 transition hover:border-amber-200/40 hover:bg-amber-300/15 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              <FiRefreshCw aria-hidden className="size-3.5" />
+                              {selectedResendAvailability &&
+                              !selectedResendAvailability.canResend
+                                ? `Available in ${formatTicketResendWait(
+                                    selectedResendAvailability.remainingMs,
+                                  )}`
+                                : suggestedAction === "resend_tickets"
+                                  ? "Resending"
+                                  : "Resend tickets"}
+                            </button>
+                          ) : null}
+                          {selectedAiSuggestion.recommendedAction ===
+                            "refund_order" &&
+                          selectedAiSuggestion.matchedOrderId ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                void refundSuggestedOrder(selectedAiSuggestion)
+                              }
+                              disabled={Boolean(suggestedAction)}
+                              className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-300/25 bg-red-400/10 px-3 py-2 text-xs font-medium text-red-100 transition hover:border-red-200/40 hover:bg-red-400/15 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {suggestedAction === "refund_order"
+                                ? "Refunding"
+                                : "Refund order"}
+                            </button>
+                          ) : null}
+                        </div>
+
+                        <p className="text-xs text-admin-subtle">
+                          Confidence{" "}
+                          {selectedAiSuggestion.confidence !== null
+                            ? `${Math.round(selectedAiSuggestion.confidence * 100)}%`
+                            : "unknown"}{" "}
+                          / {selectedAiSuggestion.model}
+                        </p>
+                      </div>
+                    ) : null}
+                  </section>
+                ) : (
+                  <section className="rounded-2xl border border-admin-border bg-black/10 p-4">
+                    <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-admin-subtle">
+                      <FiZap aria-hidden className="size-3.5" />
+                      AI assist
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-admin-muted">
+                      No AI suggestion is stored for this thread.
+                    </p>
+                  </section>
+                )}
+
                 {selectedThread.messages.map((message) => (
                   <article
                     key={message.id}

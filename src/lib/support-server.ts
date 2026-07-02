@@ -1,6 +1,7 @@
 import "server-only";
 import { createServiceClient } from "@/lib/supabase/server";
 import type {
+  SupportMessage,
   SupportSource,
   SupportStatus,
   SupportThread,
@@ -56,7 +57,7 @@ export async function createSupportThreadWithMessage({
   }
 
   const thread = threadData as SupportThread;
-  const { error: messageError } = await supabase
+  const { data: messageData, error: messageError } = await supabase
     .from("support_messages")
     .insert({
       thread_id: thread.id,
@@ -70,11 +71,16 @@ export async function createSupportThreadWithMessage({
       provider_message_id: providerMessageId ?? null,
       metadata: metadata ?? {},
       created_at: now,
-    });
+    })
+    .select("*")
+    .single();
 
   if (messageError) {
     throw messageError;
   }
 
-  return thread;
+  return {
+    thread,
+    message: messageData as SupportMessage,
+  };
 }

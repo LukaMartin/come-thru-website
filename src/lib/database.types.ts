@@ -364,6 +364,85 @@ export type Database = {
           Database["public"]["Tables"]["support_messages"]["Insert"]
         >;
       };
+      support_ai_suggestions: {
+        Row: {
+          id: string;
+          thread_id: string;
+          trigger_message_id: string | null;
+          matched_order_id: string | null;
+          provider: string;
+          model: string;
+          status: "pending" | "completed" | "failed";
+          category:
+            | "missing_tickets"
+            | "refund_request"
+            | "event_question"
+            | "complaint"
+            | "spam"
+            | "other"
+            | null;
+          priority: "low" | "normal" | "high" | null;
+          recommended_action:
+            | "resend_tickets"
+            | "refund_order"
+            | "ask_for_more_info"
+            | "manual_review"
+            | "no_action"
+            | null;
+          summary: string | null;
+          action_reason: string | null;
+          draft_reply: string | null;
+          draft_reply_outcome: "unused" | "used" | "rejected";
+          draft_reply_outcome_at: string | null;
+          draft_reply_used_message_id: string | null;
+          confidence: number | null;
+          error_message: string | null;
+          input_snapshot: Json;
+          raw_response: Json;
+          created_at: string;
+          completed_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          thread_id: string;
+          trigger_message_id?: string | null;
+          matched_order_id?: string | null;
+          provider?: string;
+          model: string;
+          status?: "pending" | "completed" | "failed";
+          category?:
+            | "missing_tickets"
+            | "refund_request"
+            | "event_question"
+            | "complaint"
+            | "spam"
+            | "other"
+            | null;
+          priority?: "low" | "normal" | "high" | null;
+          recommended_action?:
+            | "resend_tickets"
+            | "refund_order"
+            | "ask_for_more_info"
+            | "manual_review"
+            | "no_action"
+            | null;
+          summary?: string | null;
+          action_reason?: string | null;
+          draft_reply?: string | null;
+          draft_reply_outcome?: "unused" | "used" | "rejected";
+          draft_reply_outcome_at?: string | null;
+          draft_reply_used_message_id?: string | null;
+          confidence?: number | null;
+          error_message?: string | null;
+          input_snapshot?: Json;
+          raw_response?: Json;
+          created_at?: string;
+          completed_at?: string | null;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["support_ai_suggestions"]["Insert"]
+        >;
+      };
     };
     Functions: {
       ticketing_cancel_checkout_reservation: {

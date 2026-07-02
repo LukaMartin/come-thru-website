@@ -10,6 +10,8 @@ export type EncryptedTicketSecret = {
   authTag: string;
 };
 
+export const TICKET_RESEND_COOLDOWN_MS = 12 * 60 * 60 * 1000;
+
 export function createTicketSecret() {
   return crypto.randomBytes(24).toString("base64url");
 }
@@ -127,6 +129,55 @@ export function formatEventDate(value: string) {
     timeStyle: "short",
     timeZone: "Australia/Sydney",
   }).format(new Date(value));
+}
+
+export function getTicketResendAvailability(
+  ticketEmailSentAt: string | null,
+  now = new Date(),
+) {
+  if (!ticketEmailSentAt) {
+    return {
+      canResend: true,
+      nextResendAvailableAt: null,
+      remainingMs: 0,
+    };
+  }
+
+  const sentAtMs = new Date(ticketEmailSentAt).getTime();
+
+  if (Number.isNaN(sentAtMs)) {
+    return {
+      canResend: true,
+      nextResendAvailableAt: null,
+      remainingMs: 0,
+    };
+  }
+
+  const nextResendAvailableAtMs = sentAtMs + TICKET_RESEND_COOLDOWN_MS;
+  const remainingMs = Math.max(0, nextResendAvailableAtMs - now.getTime());
+
+  return {
+    canResend: remainingMs === 0,
+    nextResendAvailableAt:
+      remainingMs > 0 ? new Date(nextResendAvailableAtMs).toISOString() : null,
+    remainingMs,
+  };
+}
+
+export function formatTicketResendWait(remainingMs: number) {
+  const totalMinutes = Math.max(1, Math.ceil(remainingMs / 60000));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours === 0) {
+    return `${minutes}m`;
+  }
+
+  if (minutes === 0) {
+    return `${hours}h`;
+  }
+
+  return `${hours}h ${minutes}m`;
 }
 
 export function formatEventDateRange(

@@ -5,6 +5,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import {
   createTicketQrDataUrl,
   decryptTicketSecret,
+  getTicketResendAvailability,
   getTicketUrl,
   type EncryptedTicketSecret,
 } from "@/lib/tickets";
@@ -55,6 +56,7 @@ type ResendOrder = {
   amount_total_cents: number;
   currency: string;
   order_reference: string;
+  ticket_email_sent_at: string | null;
   ticketing_events: ResendEvent | ResendEvent[] | null;
   ticketing_tickets: ResendTicket[];
 };
@@ -88,6 +90,7 @@ export async function POST(request: Request) {
         amount_total_cents,
         currency,
         order_reference,
+        ticket_email_sent_at,
         ticketing_events!inner (
           name,
           venue,
@@ -155,6 +158,20 @@ export async function POST(request: Request) {
     );
   }
 
+  const resendAvailability = getTicketResendAvailability(
+    order.ticket_email_sent_at,
+  );
+
+  if (!resendAvailability.canResend) {
+    return Response.json(
+      {
+        error: "Tickets can only be resent once every 12 hours.",
+        nextResendAvailableAt: resendAvailability.nextResendAvailableAt,
+      },
+      { status: 429 },
+    );
+  }
+
   try {
     const tickets = await Promise.all(
       order.ticketing_tickets.map(async (ticket) => {
@@ -210,6 +227,7 @@ export async function POST(request: Request) {
       orderId: order.id,
       ticketCount: tickets.length,
       to: order.buyer_email,
+      ticketEmailSentAt: new Date().toISOString(),
     });
   } catch (error) {
     throw error;
