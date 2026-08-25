@@ -1,4 +1,4 @@
-# Come Thru Tickets
+# Come Thru Website
 
 This is the Come Thru event website and ticketing system for their Sydney/Eora dance music events.
 
