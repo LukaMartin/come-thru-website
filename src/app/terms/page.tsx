@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+import { twMerge } from "tailwind-merge";
 
 export const metadata: Metadata = {
   title: "Terms & Conditions | Come Thru",
@@ -105,10 +106,13 @@ export default function TermsPage() {
           </div>
 
           <div className="mt-10 border-t border-[#f3eadb]/12">
-            {sections.map((section) => (
+            {sections.map((section, index) => (
               <section
                 key={section.title}
-                className="grid gap-4 border-b border-[#f3eadb]/12 py-7 md:grid-cols-[0.36fr_0.64fr] md:gap-8"
+                className={twMerge(
+                  "grid gap-4 border-b border-[#f3eadb]/12 py-7 md:grid-cols-[0.36fr_0.64fr] md:gap-8",
+                  index === sections.length - 1 && "border-b-0",
+                )}
               >
                 <h2 className="text-lg font-semibold leading-tight text-[#f8f0e3] md:text-xl">
                   {section.title}
