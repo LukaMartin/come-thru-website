@@ -26,7 +26,7 @@ export default function useAdminSupport({
     "all",
   );
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedThreadId, setSelectedThreadId] = useState(
+  const [selectedThreadId, setSelectedThreadId] = useState<string | null>(
     initialThreads[0]?.id ?? null,
   );
   const [suggestedAction, setSuggestedAction] = useState<
@@ -35,6 +35,7 @@ export default function useAdminSupport({
   const [updatingStatus, setUpdatingStatus] = useState<SupportStatus | null>(
     null,
   );
+  const [deletingThreadId, setDeletingThreadId] = useState<string | null>(null);
   const [rejectingSuggestionId, setRejectingSuggestionId] = useState<
     string | null
   >(null);
@@ -225,6 +226,39 @@ export default function useAdminSupport({
     }
   }
 
+  async function deleteThread(thread: AdminSupportThread) {
+    setDeletingThreadId(thread.id);
+
+    try {
+      const response = await fetch("/api/support/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ threadId: thread.id }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Could not delete thread.");
+      }
+
+      setThreads((currentThreads) =>
+        currentThreads.filter(
+          (currentThread) => currentThread.id !== thread.id,
+        ),
+      );
+
+      setSelectedThreadId(null);
+
+      toast.success("Thread deleted.");
+    } catch (error) {
+      Sentry.captureException(error);
+      toast.error(
+        error instanceof Error ? error.message : "Could not delete thread.",
+      );
+    } finally {
+      setDeletingThreadId(null);
+    }
+  }
+
   async function resendSuggestedTickets(suggestion: AdminSupportAiSuggestion) {
     if (!suggestion.matchedOrderId) {
       return;
@@ -326,5 +360,7 @@ export default function useAdminSupport({
     updateThreadStatus,
     resendSuggestedTickets,
     refundSuggestedOrder,
+    deleteThread,
+    deletingThreadId,
   };
 }

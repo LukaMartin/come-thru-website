@@ -12,6 +12,7 @@ import {
   FiRefreshCw,
   FiSearch,
   FiSend,
+  FiTrash,
   FiUser,
   FiZap,
 } from "react-icons/fi";
@@ -104,6 +105,8 @@ export function AdminSupportInbox({ initialThreads }: AdminSupportInboxProps) {
     updateThreadStatus,
     resendSuggestedTickets,
     refundSuggestedOrder,
+    deleteThread,
+    deletingThreadId,
   } = useAdminSupport({ initialThreads });
 
   const threadStats = useMemo(
@@ -617,7 +620,7 @@ export function AdminSupportInbox({ initialThreads }: AdminSupportInboxProps) {
                     type="button"
                     onClick={() => void sendReply()}
                     disabled={isSending || !replyBody.trim()}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-admin-primary px-4 py-2.5 text-sm font-medium text-admin-primary-text transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-admin-primary w-34 px-4 py-2.5 text-sm font-medium text-admin-primary-text transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <FiSend aria-hidden className="size-4" />
                     {isSending ? "Sending" : "Send reply"}
@@ -629,10 +632,23 @@ export function AdminSupportInbox({ initialThreads }: AdminSupportInboxProps) {
                       Boolean(updatingStatus) ||
                       selectedThread.status === "resolved"
                     }
-                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-400/25 bg-emerald-400/10 px-4 py-2.5 text-sm font-medium text-emerald-100 transition hover:border-emerald-300/40 hover:bg-emerald-400/15 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-400/25 bg-emerald-400/10 w-38 px-4 py-2.5 text-sm font-medium text-emerald-100 transition hover:border-emerald-300/40 hover:bg-emerald-400/15 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <FiCheck aria-hidden className="size-4" />
                     Mark resolved
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void deleteThread(selectedThread)}
+                    disabled={
+                      Boolean(updatingStatus) ||
+                      Boolean(deletingThreadId) ||
+                      selectedThread.status !== "resolved"
+                    }
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-admin-border bg-black/15 w-38 px-4 py-2.5 text-sm font-medium text-admin-muted transition hover:border-admin-danger/50 hover:bg-black/25 hover:text-admin-danger/70 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <FiTrash aria-hidden className="size-4" />
+                    Delete thread
                   </button>
                   {selectedThread.status === "resolved" ? (
                     <p className="ml-auto text-xs text-emerald-100/65">
