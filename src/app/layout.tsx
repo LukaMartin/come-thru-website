@@ -33,7 +33,14 @@ export default function RootLayout({
         <Analytics />
         <Toaster
           position="bottom-right"
-          toastOptions={{ style: { minWidth: "fit-content" }, duration: 4000 }}
+          toastOptions={{
+            style: {
+              minWidth: "fit-content",
+              backgroundColor: "#121212",
+              color: "#f9fafb",
+            },
+            duration: 4000,
+          }}
         />
         {children}
       </body>
