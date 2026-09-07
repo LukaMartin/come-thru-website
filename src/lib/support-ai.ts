@@ -73,7 +73,7 @@ const supportAiResponseSchema = z.object({
     reason: z.string().trim().min(1).max(600),
     orderReference: z.string().trim().nullable(),
   }),
-  draftReply: z.string().trim().min(1).max(2000),
+  draftReply: z.string().trim().max(2000),
   confidence: z.number().min(0).max(1),
   needsHumanCheck: z.boolean(),
 });
@@ -576,7 +576,9 @@ function formatSupportAiDraftReply(
 }
 
 function buildGreetingDraft(draftReply: string, customerName: string | null) {
-  const body = stripLeadingGreeting(draftReply).trim();
+  const body =
+    stripLeadingGreeting(draftReply).trim() ||
+    "Thanks for reaching out. We've received your message and will get back to you shortly.";
 
   return [buildCustomerGreeting(customerName), body].join("\n\n");
 }
@@ -623,6 +625,7 @@ function buildSystemPrompt() {
     "- Always start draftReply with the customer first-name greeting on its own line, then a blank line, then the response body: Hi FirstName,",
     "- Keep draft replies concise, warm, and practical. Do not promise a refund unless eligibility is clear.",
     "- Do not include sign-off/footer text; the app adds support footer text when sending.",
+    "- draftReply must never be empty, even for spam or no_action; always write a brief draft anyway.",
     "",
     "Known FAQ:",
     ...faqItems.map((item) => `- ${item.question} ${item.answer}`),
