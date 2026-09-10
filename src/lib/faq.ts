@@ -30,4 +30,14 @@ export const faqItems = [
     answer:
       "Door sales depend on capacity and are not guaranteed. Buying online is the safest way to lock in entry.",
   },
+  {
+    question: "Do I need to print my ticket?",
+    answer:
+      "No, you can show the ticket on your phone. Have the QR code ready to scan.",
+  },
+  {
+    question: "Do I need a ticket for free events?",
+    answer:
+      "No, unless specifically stated on the event page. Entry is subject to venue capacity.",
+  },
 ];

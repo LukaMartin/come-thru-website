@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { faqItems } from "@/lib/faq";
+import { twMerge } from "tailwind-merge";
 
 export const metadata: Metadata = {
   title: "FAQ | Come Thru",
@@ -31,10 +32,13 @@ export default function FaqPage() {
           </div>
 
           <div className="mt-10 grid border-t border-[#f3eadb]/12 md:grid-cols-2">
-            {faqItems.map((item) => (
+            {faqItems.map((item, index) => (
               <div
                 key={item.question}
-                className="border-b border-[#f3eadb]/12 py-6 md:px-6 md:odd:border-r"
+                className={twMerge(
+                  "border-b border-[#f3eadb]/12 py-6 md:px-6 md:odd:border-r",
+                  index === faqItems.length - 1 && "border-b-0 md:border-b",
+                )}
               >
                 <h2 className="text-lg font-semibold text-[#f8f0e3]">
                   {item.question}
