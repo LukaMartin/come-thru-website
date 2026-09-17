@@ -142,6 +142,7 @@ export default async function SimulateEventPage({
               initialDrawerOpen={viewParam === "tickets"}
               isFree={event.is_free}
               tickets={tickets}
+              simulation={true}
             />
           </div>
 

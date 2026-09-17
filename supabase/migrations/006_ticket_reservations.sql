@@ -16,11 +16,20 @@ drop function if exists public.ticketing_create_checkout_reservation(
   integer
 );
 
+drop function if exists public.ticketing_create_checkout_reservation(
+  uuid,
+  text,
+  jsonb,
+  integer,
+  boolean
+);
+
 create or replace function public.ticketing_create_checkout_reservation(
   p_event_id uuid,
   p_order_reference text,
   p_items jsonb,
-  p_reservation_minutes integer default 10
+  p_reservation_minutes integer default 10,
+  p_allow_draft boolean default false
 )
 returns table (
   order_id uuid,
@@ -56,7 +65,10 @@ begin
   into locked_event
   from public.ticketing_events
   where id = p_event_id
-    and status = 'published'
+    and (
+      status = 'published'
+      or (p_allow_draft and status = 'draft')
+    )
   for update;
 
   if not found then
@@ -889,14 +901,16 @@ revoke execute on function public.ticketing_create_checkout_reservation(
   uuid,
   text,
   jsonb,
-  integer
+  integer,
+  boolean
 ) from public, anon, authenticated;
 
 grant execute on function public.ticketing_create_checkout_reservation(
   uuid,
   text,
   jsonb,
-  integer
+  integer,
+  boolean
 ) to service_role;
 
 revoke execute on function public.ticketing_cancel_checkout_reservation(

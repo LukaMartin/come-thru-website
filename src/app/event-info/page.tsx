@@ -136,6 +136,7 @@ export default async function EventInfoPage({
               initialDrawerOpen={viewParam === "tickets"}
               isFree={event.is_free}
               tickets={tickets}
+              simulation={false}
             />
           </div>
 

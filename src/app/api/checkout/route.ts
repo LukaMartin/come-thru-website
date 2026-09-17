@@ -7,6 +7,7 @@ import {
   MAX_QUANTITY_PER_TRANSACTION,
   MIN_QUANTITY_PER_TRANSACTION,
 } from "@/lib/checkout";
+import { getAdminAuthState } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +34,7 @@ const checkoutSchema = z.object({
       }),
     )
     .min(MIN_QUANTITY_PER_TRANSACTION),
+  simulation: z.boolean().optional().default(false),
 });
 
 export async function POST(request: Request) {
@@ -47,7 +49,9 @@ export async function POST(request: Request) {
 
   const supabase = createServiceClient();
   const stripe = createStripeClient();
-  const { eventId, items } = parsed.data;
+  const adminState = await getAdminAuthState();
+  const isAdmin = adminState.status === "admin";
+  const { eventId, items, simulation } = parsed.data;
   const aggregatedItems = aggregateItems(items);
   const itemIds = aggregatedItems.map((item) => item.ticketTypeId);
 
@@ -60,17 +64,43 @@ export async function POST(request: Request) {
     );
   }
 
+  if (simulation && !isAdmin) {
+    return Response.json(
+      { error: "Only admin can make a simulation request" },
+      { status: 403 },
+    );
+  }
+
   await cancelExpiredReservations(supabase);
 
-  const { data: event, error: eventError } = await supabase
-    .from("ticketing_events")
-    .select("*")
-    .eq("id", eventId)
-    .eq("status", "published")
-    .single();
+  if (!simulation) {
+    const { data: event, error: eventError } = await supabase
+      .from("ticketing_events")
+      .select("*")
+      .eq("id", eventId)
+      .eq("status", "published")
+      .single();
 
-  if (eventError || !event) {
-    return Response.json({ error: "Event is not available." }, { status: 404 });
+    if (eventError || !event) {
+      return Response.json(
+        { error: "Event is not available." },
+        { status: 404 },
+      );
+    }
+  } else if (simulation) {
+    const { data: event, error: eventError } = await supabase
+      .from("ticketing_events")
+      .select("*")
+      .eq("id", eventId)
+      .neq("status", "archived")
+      .single();
+
+    if (eventError || !event) {
+      return Response.json(
+        { error: "Event is not available." },
+        { status: 404 },
+      );
+    }
   }
 
   const { data: ticketTypeRows, error: ticketTypeError } = await supabase
@@ -155,6 +185,8 @@ export async function POST(request: Request) {
       eventId,
       lineItems,
       supabase,
+      simulation,
+      isAdmin,
     });
   } catch (error) {
     return Response.json(
@@ -230,6 +262,8 @@ async function createReservation({
   eventId,
   lineItems,
   supabase,
+  simulation,
+  isAdmin,
 }: {
   eventId: string;
   lineItems: {
@@ -240,6 +274,8 @@ async function createReservation({
     stripeCurrency: string;
   }[];
   supabase: ReturnType<typeof createServiceClient>;
+  simulation: boolean;
+  isAdmin: boolean;
 }) {
   for (let attempt = 0; attempt < 5; attempt += 1) {
     const { data, error } = await supabase
@@ -254,6 +290,7 @@ async function createReservation({
           currency: item.stripeCurrency,
         })),
         p_reservation_minutes: RESERVATION_MINUTES,
+        p_allow_draft: simulation && isAdmin,
       })
       .single();
 

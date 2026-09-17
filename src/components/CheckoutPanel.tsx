@@ -12,6 +12,7 @@ type CheckoutPanelProps = {
   isFree: boolean;
   initialDrawerOpen?: boolean;
   tickets: TicketOption[];
+  simulation: boolean;
 };
 
 function PriceFrom({ price }: { price: string }) {
@@ -30,6 +31,7 @@ export function CheckoutPanel({
   isFree,
   initialDrawerOpen = false,
   tickets,
+  simulation,
 }: CheckoutPanelProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -225,6 +227,7 @@ export function CheckoutPanel({
           <CheckoutForm
             eventId={eventId}
             tickets={sortedTickets}
+            simulation={simulation}
           />
         </div>
       </section>

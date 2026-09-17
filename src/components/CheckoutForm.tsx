@@ -10,6 +10,7 @@ import { MAX_QUANTITY_PER_TRANSACTION } from "@/lib/checkout";
 type CheckoutFormProps = {
   eventId: string;
   tickets: TicketOption[];
+  simulation: boolean;
 };
 
 type QuantityStepperProps = {
@@ -64,7 +65,11 @@ function QuantityStepper({
   );
 }
 
-export function CheckoutForm({ eventId, tickets }: CheckoutFormProps) {
+export function CheckoutForm({
+  eventId,
+  tickets,
+  simulation,
+}: CheckoutFormProps) {
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -136,7 +141,7 @@ export function CheckoutForm({ eventId, tickets }: CheckoutFormProps) {
       const response = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ eventId, items }),
+        body: JSON.stringify({ eventId, items, simulation }),
       });
 
       const payload = (await response.json()) as {
