@@ -42,6 +42,33 @@ export async function getCurrentEvent() {
   return data as EventWithTickets | null;
 }
 
+export async function getDraftEventById(eventId: string) {
+  const supabase = createServiceClient();
+
+  const { data, error } = await supabase
+    .from("ticketing_events")
+    .select(
+      `
+    *,
+    ticketing_ticket_types (*)
+  `,
+    )
+    .neq("status", "archived")
+    .eq("is_current", false)
+    .eq("id", eventId)
+    .order("sort_order", {
+      ascending: true,
+      referencedTable: "ticketing_ticket_types",
+    })
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data as EventWithTickets | null;
+}
+
 export async function getTicketCountsByType(
   ticketTypeIds: string[],
   supabaseClient?: ReturnType<typeof createServiceClient>,

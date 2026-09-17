@@ -6,6 +6,8 @@ import type { AdminMutationState } from "@/lib/admin-events-actions";
 import type { Database } from "@/lib/database.types";
 import { formatSydneyDateTimeLocal } from "@/lib/event-time";
 import { useActionToast } from "@/hooks/useActionToast";
+import { twMerge } from "tailwind-merge";
+import { useRouter } from "next/navigation";
 
 type EventRow = Database["public"]["Tables"]["ticketing_events"]["Row"];
 
@@ -32,6 +34,7 @@ export function AdminEventForm({ action, event, mode }: AdminEventFormProps) {
   const previewUrl = event?.hero_image_url?.trim();
 
   useActionToast(state, isPending);
+  const router = useRouter();
 
   return (
     <form action={formAction} className="grid gap-5">
@@ -256,17 +259,33 @@ export function AdminEventForm({ action, event, mode }: AdminEventFormProps) {
         </label>
       </div>
 
-      <button
-        type="submit"
-        disabled={isPending}
-        className="w-fit rounded-xl bg-admin-primary px-5 py-2.5 text-sm font-medium text-admin-primary-text transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        {isPending
-          ? "Saving..."
-          : mode === "create"
-            ? "Create draft"
-            : "Save event"}
-      </button>
+      <div className="flex items-center gap-x-3">
+        <button
+          type="submit"
+          disabled={isPending}
+          className="w-fit rounded-xl bg-admin-primary px-5 py-2.5 text-sm font-medium text-admin-primary-text transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isPending
+            ? "Saving..."
+            : mode === "create"
+              ? "Create draft"
+              : "Save event"}
+        </button>
+        <button
+          type="button"
+          disabled={event?.is_current === true}
+          className={twMerge(
+            "w-fit rounded-xl border border-emerald-400/25 bg-emerald-400/10 px-5 py-2.5 text-sm font-medium text-emerald-100 transition hover:border-emerald-300/40 hover:bg-emerald-400/15 disabled:cursor-not-allowed disabled:opacity-50",
+            mode === "create" && "hidden",
+          )}
+          onClick={(e) => {
+            e.preventDefault();
+            router.push(`/admin/events/${event?.id}/simulate`);
+          }}
+        >
+          Simulate event
+        </button>
+      </div>
     </form>
   );
 }
